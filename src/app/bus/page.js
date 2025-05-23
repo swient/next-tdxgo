@@ -143,27 +143,29 @@ export default function BusPage() {
 
   const groupButtons = (
     <div className="flex justify-between items-center mb-4">
-      <div className="grid grid-cols-2 gap-2 sm:flex">
-        {availableGroups.map((g) => (
-          <button
-            key={g.key}
-            className={`px-3 py-1 rounded ${
-              groupType === g.key
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setGroupType(g.key)}
-          >
-            {g.label}
-          </button>
-        ))}
-      </div>
+      {routes.length > 100 && (
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          {availableGroups.map((g) => (
+            <button
+              key={g.key}
+              className={`px-3 py-1 rounded ${
+                groupType === g.key
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+              onClick={() => setGroupType(g.key)}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+      )}
       <input
         type="text"
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
         placeholder="搜尋路線"
-        className="ml-2 px-2 py-1 border rounded text-sm"
+        className="px-2 py-1 border rounded text-sm"
         style={{ minWidth: 100 }}
       />
     </div>
@@ -265,7 +267,6 @@ export default function BusPage() {
         // 處理站序
         if (stopsRes.error) {
           setStopsError(stopsRes.error);
-          stopsCache.current[city] = [];
         } else {
           stopsCache.current[city] = stopsRes.data;
           setStopsError("");
@@ -273,7 +274,6 @@ export default function BusPage() {
         // 處理ETA
         if (etaRes.error) {
           setEtaError(etaRes.error);
-          etaCache.current[city] = [];
         } else {
           etaCache.current[city] = etaRes.data;
           setEtaError("");
@@ -281,7 +281,6 @@ export default function BusPage() {
         // 處理即時車輛
         if (realTimeRes.error) {
           setRealTimeBusesError(realTimeRes.error);
-          realTimeBusesCache.current[city] = [];
         } else {
           realTimeBusesCache.current[city] = realTimeRes.data;
           setRealTimeBusesError("");
@@ -382,7 +381,7 @@ export default function BusPage() {
               {CITY_LIST.find((c) => c.key === city)?.name}公車
             </h2>
             {/* 分組切換按鈕 */}
-            {routes.length > 100 && groupButtons}
+            {groupButtons}
             {(loadingRoutes ||
               loadingStops ||
               loadingEta ||
@@ -577,18 +576,16 @@ export default function BusPage() {
                               etaObj.StopStatus === 0 &&
                               etaObj.EstimateTime != null
                             ) {
-                              if (etaObj.EstimateTime > 3600) {
-                                const hr = Math.floor(
-                                  etaObj.EstimateTime / 3600
-                                );
-                                const min = Math.floor(
-                                  (etaObj.EstimateTime % 3600) / 60
-                                );
-                                etaText = `${hr}小時${min}分鐘`;
+                              const min = Math.floor(etaObj.EstimateTime / 60);
+                              if (min === 0) {
+                                etaText = "進站中";
+                              } else if (min === 1) {
+                                etaText = "即將進站";
+                              } else if (min < 60) {
+                                etaText = `${min}分`;
                               } else {
-                                etaText = `${Math.floor(
-                                  etaObj.EstimateTime / 60
-                                )}分`;
+                                const hr = Math.floor(min / 60);
+                                etaText = `${hr}時${min % 60}分`;
                               }
                             } else {
                               switch (etaObj.StopStatus) {
