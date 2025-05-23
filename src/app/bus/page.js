@@ -84,6 +84,91 @@ export default function BusPage() {
   const [loadingRealTimeBuses, setLoadingRealTimeBuses] = useState(false);
 
   const [direction, setDirection] = useState(0);
+
+  const [groupType, setGroupType] = useState("number");
+  const [searchText, setSearchText] = useState("");
+
+  // 分組過濾函式
+  function getGroupedRoutes(routes, groupType) {
+    if (!Array.isArray(routes)) return [];
+    switch (groupType) {
+      case "number":
+        // 純數字或數字+字母
+        return routes.filter((route) => {
+          const name =
+            route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "";
+          return /^[0-9]+([A-Z]|區)?$/.test(name);
+        });
+      case "color":
+        // 名稱含顏色
+        return routes.filter((route) => {
+          const name =
+            route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "";
+          return /^(紅|藍|綠|棕|橘|黃)[0-9]/.test(name);
+        });
+      case "trunk":
+        // 名稱含幹線
+        return routes.filter((route) => {
+          const name =
+            route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "";
+          return /幹線/.test(name);
+        });
+      case "other":
+        // 其他
+        return routes.filter((route) => {
+          const name =
+            route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "";
+          const isNumber = /^[0-9]+([A-Z]|區)?$/.test(name);
+          const isColor = /^(紅|藍|綠|棕|橘|黃)[0-9]/.test(name);
+          const isTrunk = /幹線/.test(name);
+          return !isNumber && !isColor && !isTrunk;
+        });
+      default:
+        return routes;
+    }
+  }
+
+  // 取得有資料的分組
+  const baseRoutes = routes.filter((route) => route.Direction === 0);
+
+  const groupDefs = [
+    { key: "number", label: "數字" },
+    { key: "color", label: "顏色" },
+    { key: "trunk", label: "幹線" },
+    { key: "other", label: "其他" },
+  ];
+  const availableGroups = groupDefs.filter(
+    (g) => getGroupedRoutes(baseRoutes, g.key).length > 0
+  );
+
+  const groupButtons = (
+    <div className="flex justify-between items-center mb-4">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
+        {availableGroups.map((g) => (
+          <button
+            key={g.key}
+            className={`px-3 py-1 rounded ${
+              groupType === g.key
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+            onClick={() => setGroupType(g.key)}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+      <input
+        type="text"
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        placeholder="搜尋路線"
+        className="ml-2 px-2 py-1 border rounded text-sm"
+        style={{ minWidth: 100 }}
+      />
+    </div>
+  );
+
   // 切換 tab 時自動切換 selectedRoute 為對應方向
   useEffect(() => {
     if (!selectedRoute || !routes.length) return;
@@ -296,6 +381,8 @@ export default function BusPage() {
             <h2 className="text-lg font-bold mb-2">
               {CITY_LIST.find((c) => c.key === city)?.name}公車
             </h2>
+            {/* 分組切換按鈕 */}
+            {routes.length > 100 && groupButtons}
             {(loadingRoutes ||
               loadingStops ||
               loadingEta ||
@@ -320,8 +407,17 @@ export default function BusPage() {
                 realTimeBusesError
               ) && (
                 <div className="max-h-none sm:max-h-[60vh] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {routes
-                    .filter((route) => route.Direction === 0)
+                  {getGroupedRoutes(
+                    routes.filter((route) => route.Direction === 0),
+                    groupType
+                  )
+                    .filter((route) => {
+                      const name =
+                        route.SubRouteName?.Zh_tw ||
+                        route.RouteName?.Zh_tw ||
+                        "";
+                      return name.includes(searchText);
+                    })
                     .sort((a, b) => {
                       const nameA =
                         a.SubRouteName?.Zh_tw || a.RouteName?.Zh_tw || "";
@@ -341,7 +437,10 @@ export default function BusPage() {
                           route.Direction
                         }
                         className="bg-gray-100 hover:bg-blue-200 text-gray-800 py-2 px-3 rounded flex flex-col items-start border border-gray-200"
-                        onClick={() => setSelectedRoute(route)}
+                        onClick={() => {
+                          setSelectedRoute(route);
+                          setDirection(0);
+                        }}
                       >
                         <span className="font-bold text-blue-700 text-lg">
                           {route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw}
