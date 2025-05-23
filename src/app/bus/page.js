@@ -109,6 +109,30 @@ export default function BusPage() {
   // 取得路線
   useEffect(() => {
     if (!city) return;
+
+    // 先檢查 cache
+    const hasCache =
+      routesCache.current[city] &&
+      stopsCache.current[city] &&
+      etaCache.current[city] &&
+      realTimeBusesCache.current[city];
+
+    if (hasCache) {
+      setRoutes(routesCache.current[city]);
+      setStops(stopsCache.current[city]);
+      setEta(etaCache.current[city]);
+      setRealTimeBuses(realTimeBusesCache.current[city]);
+      setRoutesError("");
+      setStopsError("");
+      setEtaError("");
+      setRealTimeBusesError("");
+      setLoadingRoutes(false);
+      setLoadingStops(false);
+      setLoadingEta(false);
+      setLoadingRealTimeBuses(false);
+      return;
+    }
+
     setLoadingRoutes(true);
     setLoadingStops(true);
     setLoadingEta(true);
@@ -465,7 +489,7 @@ export default function BusPage() {
                               } else {
                                 etaText = `${Math.floor(
                                   etaObj.EstimateTime / 60
-                                )} 分`;
+                                )}分`;
                               }
                             } else {
                               switch (etaObj.StopStatus) {
@@ -487,38 +511,48 @@ export default function BusPage() {
                             }
                           }
                           // 取得即時車輛
-                          const busesHere = realTimeBuses.filter(
-                            (bus) =>
+                          const busesHere = realTimeBuses.filter((bus) => {
+                            const isMatch =
                               bus.RouteUID === selectedRoute.RouteUID &&
                               bus.Direction === direction &&
-                              stop.StopSequence === bus.StopSequence
-                          );
+                              stop.StopSequence === bus.StopSequence &&
+                              bus.DutyStatus === 0 &&
+                              bus.BusStatus === 0;
+                            if (!isMatch) return false;
+                            // 取得該方向的最大 StopSequence
+                            const stopsOfDir = stops
+                              .filter((s) => s.Direction === direction)
+                              .flatMap((s) => s.Stops || []);
+                            const maxSeq = Math.max(
+                              ...stopsOfDir.map((s) => s.StopSequence || 0)
+                            );
+                            // 若車輛在最後一站，視為停駛（不顯示）
+                            if (bus.StopSequence === maxSeq) return false;
+                            return true;
+                          });
                           const isAnyBus = busesHere.length > 0;
                           return (
                             <li
                               key={stop.StopUID + "-" + stop.StopSequence}
                               className="flex justify-between items-center py-2 border-b border-gray-100 relative"
                             >
-                              <>
-                                <span
-                                  className={`absolute left-[-1.37rem] w-2.5 h-2.5 rounded-full z-10 ${
-                                    isAnyBus ? "bg-green-500" : "bg-blue-300"
-                                  }`}
-                                ></span>
+                              <span
+                                className={`absolute left-[-1.37rem] w-2.5 h-2.5 rounded-full z-10 ${
+                                  isAnyBus ? "bg-green-500" : "bg-blue-300"
+                                }`}
+                              ></span>
+                              <span className="min-w-[6.5rem] text-green-700 text-xs font-bold">
                                 {isAnyBus &&
                                   busesHere.map((bus) => (
-                                    <span
-                                      key={bus.PlateNumb}
-                                      className="text-green-700 text-xs font-bold mr-1"
-                                    >
+                                    <span key={bus.PlateNumb}>
                                       {bus.PlateNumb}
                                     </span>
                                   ))}
-                              </>
+                              </span>
                               <span className="text-gray-800 flex-1 text-center">
                                 {stop.StopName.Zh_tw}
                               </span>
-                              <span className="text-blue-600 font-mono">
+                              <span className="w-[6.5rem] text-blue-600 font-mono text-center">
                                 {etaText}
                               </span>
                             </li>
