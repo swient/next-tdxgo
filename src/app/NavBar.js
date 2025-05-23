@@ -12,9 +12,12 @@ export default function NavBar() {
         </Link>
       </div>
       <div className="flex gap-4">
-        <span className="pointer-events-none opacity-60 font-medium text-gray-400 dark:text-gray-500">
+        <Link
+          href="/bus"
+          className="hover:underline font-medium text-gray-700 dark:text-gray-200"
+        >
           公車
-        </span>
+        </Link>
         <span className="pointer-events-none opacity-60 font-medium text-gray-400 dark:text-gray-500">
           捷運
         </span>

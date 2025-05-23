@@ -5,10 +5,10 @@ const transportList = [
   {
     key: "bus",
     name: "公車",
-    desc: "全台公路客運與市區公車車輛資訊（即將推出）",
+    desc: "全台公路客運與市區公車車輛資訊",
     icon: "/icons/bus.svg",
-    href: "#",
-    available: false,
+    href: "/bus",
+    available: true,
   },
   {
     key: "metro",
