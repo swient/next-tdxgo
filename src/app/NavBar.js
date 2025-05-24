@@ -21,9 +21,12 @@ export default function NavBar() {
         <span className="pointer-events-none opacity-60 font-medium text-gray-400 dark:text-gray-500">
           捷運
         </span>
-        <span className="pointer-events-none opacity-60 font-medium text-gray-400 dark:text-gray-500">
+        <Link
+          href="/train"
+          className="hover:underline font-medium text-gray-700 dark:text-gray-200"
+        >
           火車
-        </span>
+        </Link>
         <span className="pointer-events-none opacity-60 font-medium text-gray-400 dark:text-gray-500">
           高鐵
         </span>
