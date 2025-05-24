@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 
+import { fetchWithError } from "../utils/fetchUtils";
+
 // 台鐵車站資訊頁面
 // 功能：
 // 1. 提供縣市下拉選單
@@ -31,44 +33,6 @@ const CITY_LIST = [
   { key: "花蓮縣", name: "花蓮縣" },
   { key: "宜蘭縣", name: "宜蘭縣" },
 ];
-
-// 從 API Route 取得 OAuth token
-// 使用 cache 機制避免重複請求
-// 若 token 過期會自動重新取得
-async function getOAuthHeader() {
-  if (typeof window === "undefined") return {};
-  if (!getOAuthHeader.cachedToken || Date.now() > getOAuthHeader.tokenExpireAt) {
-    const resp = await fetch("/api/token", { method: "POST" });
-    if (!resp.ok) throw new Error("OAuth2 token 取得失敗");
-    const data = await resp.json();
-    getOAuthHeader.cachedToken = data.access_token;
-    getOAuthHeader.tokenExpireAt = Date.now() + (data.expires_in - 60) * 1000;
-  }
-  return { Authorization: `Bearer ${getOAuthHeader.cachedToken}` };
-}
-
-// 封裝 fetch 請求
-// 處理常見錯誤狀況並統一回傳格式
-// 回傳格式: { data: 資料, error: 錯誤訊息 }
-async function fetchWithError(url, config = {}) {
-  try {
-    const headers = { ...(config.headers || {}), ...(await getOAuthHeader()) };
-    const res = await fetch(url, {
-      method: "GET",
-      headers,
-    });
-    if (res.status === 429) {
-      return { data: null, error: "請求過於頻繁，請稍後再試" };
-    }
-    if (!res.ok) {
-      return { data: null, error: "資料取得失敗，請稍後再試" };
-    }
-    const data = await res.json();
-    return { data, error: null };
-  } catch {
-    return { data: null, error: "資料取得失敗，請稍後再試" };
-  }
-}
 
 export default function TrainPage() {
   // 儲存所有車站資料
@@ -113,13 +77,13 @@ export default function TrainPage() {
   }, []);
 
   // 根據選擇的縣市過濾起始站
-  const filteredOriginStations = stations.filter(
-    station => station.StationAddress?.includes(selectedOriginCity)
+  const filteredOriginStations = stations.filter((station) =>
+    station.StationAddress?.includes(selectedOriginCity)
   );
 
   // 根據選擇的縣市過濾終點站
-  const filteredDestStations = stations.filter(
-    station => station.StationAddress?.includes(selectedDestCity)
+  const filteredDestStations = stations.filter((station) =>
+    station.StationAddress?.includes(selectedDestCity)
   );
 
   // 當切換起始站縣市時，清除已選擇的起始站
@@ -139,22 +103,22 @@ export default function TrainPage() {
   // 取得時刻表資料
   const fetchTimetable = async () => {
     if (!selectedOriginStation || !selectedDestStation || !selectedDate) return;
-    
+
     setLoadingTimetable(true);
     setTimetableError("");
     setTimetableData([]);
-// 保持原始的 YYYY-MM-DD 格式
-const formattedDate = selectedDate;
-const url = `${BASE_URL}/basic/v3/Rail/TRA/DailyTrainTimetable/OD/${selectedOriginStation.StationID}/to/${selectedDestStation.StationID}/${formattedDate}`;
-console.log('請求 URL:', url);
+    // 保持原始的 YYYY-MM-DD 格式
+    const formattedDate = selectedDate;
+    const url = `${BASE_URL}/basic/v3/Rail/TRA/DailyTrainTimetable/OD/${selectedOriginStation.StationID}/to/${selectedDestStation.StationID}/${formattedDate}`;
+    console.log("請求 URL:", url);
     console.log(url);
     const response = await fetchWithError(url);
     setLoadingTimetable(false);
-    
+
     if (response.error) {
       setTimetableError(response.error);
     } else {
-      console.log('時刻表資料:', response.data);
+      console.log("時刻表資料:", response.data);
       setTimetableData(response.data);
     }
   };
@@ -175,15 +139,11 @@ console.log('請求 URL:', url);
         </h1>
 
         {/* 載入中提示 */}
-        {loadingStations && (
-          <div className="text-gray-500">載入中...</div>
-        )}
+        {loadingStations && <div className="text-gray-500">載入中...</div>}
 
         {/* 錯誤提示 */}
         {stationsError && (
-          <div className="text-red-600 font-semibold">
-            {stationsError}
-          </div>
+          <div className="text-red-600 font-semibold">{stationsError}</div>
         )}
 
         {/* 選擇區域 */}
@@ -216,9 +176,15 @@ console.log('請求 URL:', url);
                       起始站
                     </label>
                     <select
-                      value={selectedOriginStation ? selectedOriginStation.StationID : ""}
+                      value={
+                        selectedOriginStation
+                          ? selectedOriginStation.StationID
+                          : ""
+                      }
                       onChange={(e) => {
-                        const station = stations.find(s => s.StationID === e.target.value);
+                        const station = stations.find(
+                          (s) => s.StationID === e.target.value
+                        );
                         setSelectedOriginStation(station);
                       }}
                       className="w-full p-2 border rounded-lg"
@@ -227,7 +193,10 @@ console.log('請求 URL:', url);
                       {filteredOriginStations
                         .sort((a, b) => a.StationID.localeCompare(b.StationID))
                         .map((station) => (
-                          <option key={station.StationID} value={station.StationID}>
+                          <option
+                            key={station.StationID}
+                            value={station.StationID}
+                          >
                             {station.StationName?.Zh_tw} ({station.StationID})
                           </option>
                         ))}
@@ -262,9 +231,13 @@ console.log('請求 URL:', url);
                       終點站
                     </label>
                     <select
-                      value={selectedDestStation ? selectedDestStation.StationID : ""}
+                      value={
+                        selectedDestStation ? selectedDestStation.StationID : ""
+                      }
                       onChange={(e) => {
-                        const station = stations.find(s => s.StationID === e.target.value);
+                        const station = stations.find(
+                          (s) => s.StationID === e.target.value
+                        );
                         setSelectedDestStation(station);
                       }}
                       className="w-full p-2 border rounded-lg"
@@ -273,7 +246,10 @@ console.log('請求 URL:', url);
                       {filteredDestStations
                         .sort((a, b) => a.StationID.localeCompare(b.StationID))
                         .map((station) => (
-                          <option key={station.StationID} value={station.StationID}>
+                          <option
+                            key={station.StationID}
+                            value={station.StationID}
+                          >
                             {station.StationName?.Zh_tw} ({station.StationID})
                           </option>
                         ))}
@@ -324,12 +300,21 @@ console.log('請求 URL:', url);
                   </thead>
                   <tbody>
                     {timetableData.TrainTimetables.map((train) => {
-                      const originStop = train.StopTimes.find(stop => stop.StationID === selectedOriginStation.StationID);
-                      const destStop = train.StopTimes.find(stop => stop.StationID === selectedDestStation.StationID);
+                      const originStop = train.StopTimes.find(
+                        (stop) =>
+                          stop.StationID === selectedOriginStation.StationID
+                      );
+                      const destStop = train.StopTimes.find(
+                        (stop) =>
+                          stop.StationID === selectedDestStation.StationID
+                      );
                       if (!originStop || !destStop) return null;
 
                       return (
-                        <tr key={train.TrainInfo.TrainNo} className="hover:bg-gray-50">
+                        <tr
+                          key={train.TrainInfo.TrainNo}
+                          className="hover:bg-gray-50"
+                        >
                           <td className="border px-4 py-2 text-center">
                             {train.TrainInfo.TrainNo}
                           </td>
@@ -347,13 +332,18 @@ console.log('請求 URL:', url);
                               const depTime = originStop.DepartureTime;
                               const arrTime = destStop.ArrivalTime;
                               if (!depTime || !arrTime) return "-";
-                              
-                              const [depHour, depMin] = depTime.split(":").map(Number);
-                              const [arrHour, arrMin] = arrTime.split(":").map(Number);
-                              
-                              let diffMin = (arrHour * 60 + arrMin) - (depHour * 60 + depMin);
+
+                              const [depHour, depMin] = depTime
+                                .split(":")
+                                .map(Number);
+                              const [arrHour, arrMin] = arrTime
+                                .split(":")
+                                .map(Number);
+
+                              let diffMin =
+                                arrHour * 60 + arrMin - (depHour * 60 + depMin);
                               if (diffMin < 0) diffMin += 24 * 60;
-                              
+
                               const hours = Math.floor(diffMin / 60);
                               const mins = diffMin % 60;
                               return `${hours}小時${mins}分鐘`;
