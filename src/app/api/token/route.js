@@ -1,7 +1,10 @@
 // Next.js API Route：取得 TDX token
 export async function POST() {
+ 
   const CLIENT_ID = process.env.CLIENT_ID;
   const CLIENT_SECRET = process.env.CLIENT_SECRET;
+
+
 
   const resp = await fetch(
     "https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token",

@@ -23,8 +23,8 @@ const transportList = [
     name: "火車",
     desc: "全台火車動態與車輛資訊（即將推出）",
     icon: "/icons/train.svg",
-    href: "#",
-    available: false,
+    href: "train",
+    available: true,
   },
   {
     key: "hsr",
