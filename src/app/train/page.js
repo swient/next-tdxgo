@@ -9,29 +9,28 @@ import { fetchWithError } from "../utils/fetchUtils";
 // 2. 根據選擇的縣市顯示該縣市的車站下拉選單
 // 3. 顯示選擇車站的詳細資訊
 
-const BASE_URL = "https://tdx.transportdata.tw/api";
+const BASE_URL = "https://tdx.transportdata.tw/api/basic";
 
 // 縣市清單
 const CITY_LIST = [
-  { key: "基隆市", name: "基隆市" },
-  { key: "臺北市", name: "臺北市" },
-  { key: "新北市", name: "新北市" },
-  { key: "桃園市", name: "桃園市" },
-  { key: "新竹市", name: "新竹市" },
-  { key: "新竹縣", name: "新竹縣" },
-  { key: "苗栗縣", name: "苗栗縣" },
-  { key: "臺中市", name: "臺中市" },
-  { key: "彰化縣", name: "彰化縣" },
-  { key: "南投縣", name: "南投縣" },
-  { key: "雲林縣", name: "雲林縣" },
-  { key: "嘉義市", name: "嘉義市" },
-  { key: "嘉義縣", name: "嘉義縣" },
-  { key: "臺南市", name: "臺南市" },
-  { key: "高雄市", name: "高雄市" },
-  { key: "屏東縣", name: "屏東縣" },
-  { key: "臺東縣", name: "臺東縣" },
-  { key: "花蓮縣", name: "花蓮縣" },
-  { key: "宜蘭縣", name: "宜蘭縣" },
+  "基隆市",
+  "臺北市",
+  "新北市",
+  "桃園市",
+  "新竹市",
+  "新竹縣",
+  "苗栗縣",
+  "臺中市",
+  "彰化縣",
+  "南投縣",
+  "雲林縣",
+  "嘉義市",
+  "嘉義縣",
+  "臺南市",
+  "高雄市",
+  "屏東縣",
+  "臺東縣",
+  "花蓮縣",
 ];
 
 export default function TrainPage() {
@@ -61,13 +60,13 @@ export default function TrainPage() {
   // 在元件載入時取得車站資料
   useEffect(() => {
     setLoadingStations(true);
-    fetchWithError(`${BASE_URL}/basic/v2/Rail/TRA/Station?$format=JSON`)
+    fetchWithError(`${BASE_URL}/v3/Rail/TRA/Station?$format=JSON`)
       .then((res) => {
         if (res.error) {
           setStationsError(res.error);
           setStations([]);
         } else {
-          setStations(res.data);
+          setStations(res.data.Stations);
           setStationsError("");
         }
       })
@@ -109,7 +108,7 @@ export default function TrainPage() {
     setTimetableData([]);
     // 保持原始的 YYYY-MM-DD 格式
     const formattedDate = selectedDate;
-    const url = `${BASE_URL}/basic/v3/Rail/TRA/DailyTrainTimetable/OD/${selectedOriginStation.StationID}/to/${selectedDestStation.StationID}/${formattedDate}`;
+    const url = `${BASE_URL}/v3/Rail/TRA/DailyTrainTimetable/OD/${selectedOriginStation.StationID}/to/${selectedDestStation.StationID}/${formattedDate}`;
     console.log("請求 URL:", url);
     console.log(url);
     const response = await fetchWithError(url);
@@ -163,8 +162,8 @@ export default function TrainPage() {
                   >
                     <option value="">請選擇縣市</option>
                     {CITY_LIST.map((city) => (
-                      <option key={city.key} value={city.key}>
-                        {city.name}
+                      <option key={city} value={city}>
+                        {city}
                       </option>
                     ))}
                   </select>
@@ -218,8 +217,8 @@ export default function TrainPage() {
                   >
                     <option value="">請選擇縣市</option>
                     {CITY_LIST.map((city) => (
-                      <option key={city.key} value={city.key}>
-                        {city.name}
+                      <option key={city} value={city}>
+                        {city}
                       </option>
                     ))}
                   </select>
