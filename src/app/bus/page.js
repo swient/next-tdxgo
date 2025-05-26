@@ -26,7 +26,7 @@ export default function BusPage() {
     errors.routes || errors.stops || errors.eta || errors.realTimeBuses;
 
   return (
-    <div className="min-h-screen sm:min-h-[calc(100vh-80px)] bg-gray-50 py-8 px-4">
+    <div className="min-h-screen sm:min-h-[calc(100vh-70px)] bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6">
         <h1 className="text-2xl font-bold mb-4 text-blue-700 flex items-center gap-2">
           <img src="/icons/bus.svg" alt="bus" className="w-8 h-8" />

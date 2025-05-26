@@ -91,16 +91,14 @@ export default function RouteDetail({
       <div>
         {stops
           .filter((s) => s.Direction === direction)
-          .map((s, idx) => (
+          .map((s) => (
             <div
               key={
                 s.SubRouteUID +
                 "-" +
                 (s.Operators?.map((op) => op.OperatorID).join("_") || "") +
                 "-" +
-                s.Direction +
-                "-" +
-                idx
+                s.Direction
               }
             >
               <div className="font-semibold text-blue-700 mb-2">

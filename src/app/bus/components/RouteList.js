@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 
 export default function RouteList({ routes, setSelectedRoute, setDirection }) {
-  const [groupType, setGroupType] = useState("number");
+  const [groupType, setGroupType] = useState("all");
   const [searchText, setSearchText] = useState("");
 
   function getGroupedRoutes(routes, groupType) {
     if (!Array.isArray(routes)) return [];
     switch (groupType) {
+      case "all":
+        return routes;
       case "number":
         return routes.filter((route) => {
           const name =
@@ -40,6 +42,7 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
   }
 
   const groupDefs = [
+    { key: "all", label: "全部" },
     { key: "number", label: "數字" },
     { key: "color", label: "顏色" },
     { key: "trunk", label: "幹線" },
@@ -50,6 +53,21 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
   const availableGroups = groupDefs.filter(
     (g) => getGroupedRoutes(baseRoutes, g.key).length > 0
   );
+
+  // 分組，優先 direction=0，否則 direction=1
+  const grouped = {};
+  routes.forEach((route) => {
+    const key =
+      (route.RouteUID || "") +
+      "_" +
+      (route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "");
+    if (!(key in grouped)) {
+      grouped[key] = route;
+    } else if (grouped[key].Direction !== 0 && route.Direction === 0) {
+      grouped[key] = route;
+    }
+  });
+  const displayRoutes = Object.values(grouped);
 
   return (
     <>
@@ -81,10 +99,7 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
         />
       </div>
       <div className="max-h-none sm:max-h-[60vh] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {getGroupedRoutes(
-          routes.filter((route) => route.Direction === 0),
-          groupType
-        )
+        {getGroupedRoutes(displayRoutes, groupType)
           .filter((route) => {
             const name =
               route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "";
@@ -95,7 +110,7 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
             const nameB = b.SubRouteName?.Zh_tw || b.RouteName?.Zh_tw || "";
             return nameA.localeCompare(nameB, "zh-Hant");
           })
-          .map((route, idx) => (
+          .map((route) => (
             <button
               key={
                 route.SubRouteUID +
@@ -107,7 +122,7 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
               className="bg-gray-100 hover:bg-blue-200 text-gray-800 py-2 px-3 rounded flex flex-col items-start border border-gray-200"
               onClick={() => {
                 setSelectedRoute(route);
-                setDirection(0);
+                setDirection(route.Direction);
               }}
             >
               <span className="font-bold text-blue-700 text-lg">
