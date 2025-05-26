@@ -80,15 +80,10 @@ export function useBusApi() {
       ),
     ])
       .then(([routeRes, stopsRes, etaRes, realTimeRes]) => {
-        setErrors({
-          routes: routeRes.error || "",
-          stops: stopsRes.error || "",
-          eta: etaRes.error || "",
-          realTimeBuses: realTimeRes.error || "",
-        });
         // 處理路線
         if (routeRes.error) {
           setRoutes([]);
+          setErrors((prev) => ({ ...prev, routes: routeRes.error }));
         } else {
           const allSubRoutes = [];
           routeRes.data.forEach((route) => {
@@ -112,18 +107,31 @@ export function useBusApi() {
           });
           routesCache.current[city.key] = allSubRoutes;
           setRoutes(allSubRoutes);
+          setErrors((prev) => ({ ...prev, routes: "" }));
         }
         // 處理站序
-        if (!stopsRes.error) {
+        if (stopsRes.error) {
+          setStops([]);
+          setErrors((prev) => ({ ...prev, stops: stopsRes.error }));
+        } else {
           stopsCache.current[city.key] = stopsRes.data;
+          setErrors((prev) => ({ ...prev, stops: "" }));
         }
         // 處理ETA
-        if (!etaRes.error) {
+        if (etaRes.error) {
+          setEta([]);
+          setErrors((prev) => ({ ...prev, eta: etaRes.error }));
+        } else {
           etaCache.current[city.key] = etaRes.data;
+          setErrors((prev) => ({ ...prev, eta: "" }));
         }
         // 處理即時車輛
-        if (!realTimeRes.error) {
+        if (realTimeRes.error) {
+          setRealTimeBuses([]);
+          setErrors((prev) => ({ ...prev, realTimeBuses: realTimeRes.error }));
+        } else {
           realTimeBusesCache.current[city.key] = realTimeRes.data;
+          setErrors((prev) => ({ ...prev, realTimeBuses: "" }));
         }
       })
       .finally(() => {
