@@ -38,8 +38,8 @@ export default function TrainPage() {
   const [stations, setStations] = useState([]);
   // 儲存取得車站資料時的錯誤訊息
   const [stationsError, setStationsError] = useState("");
-  // 標示是否正在載入車站資料
-  const [loadingStations, setLoadingStations] = useState(false);
+  // 標示是否正在載入車站與路線資料
+  const [loadingBaseData, setLoadingBaseData] = useState(false);
   // 標示是否正在載入時刻表資料
   const [loadingTimetable, setLoadingTimetable] = useState(false);
   // 儲存選擇的起始站縣市
@@ -56,34 +56,37 @@ export default function TrainPage() {
   const [timetableData, setTimetableData] = useState(null);
   // 儲存時刻表錯誤訊息
   const [timetableError, setTimetableError] = useState("");
+  // 儲存路線資料
+  const [stationLines, setStationLines] = useState([]);
+  const [linesError, setLinesError] = useState("");
 
-  // 在元件載入時取得車站資料
+  // 並行取得車站與路線資料
   useEffect(() => {
-    setLoadingStations(true);
-    fetchWithError(`${BASE_URL}/v3/Rail/TRA/Station?$format=JSON`)
-      .then((res) => {
-        if (res.error) {
-          setStationsError(res.error);
+    setLoadingBaseData(true);
+    Promise.all([
+      fetchWithError(`${BASE_URL}/v3/Rail/TRA/Station?$format=JSON`),
+      fetchWithError(`${BASE_URL}/v3/Rail/TRA/StationOfLine?$format=JSON`),
+    ])
+      .then(([stationRes, lineRes]) => {
+        if (stationRes.error) {
+          setStationsError(stationRes.error);
           setStations([]);
         } else {
-          setStations(res.data.Stations);
+          setStations(stationRes.data.Stations);
           setStationsError("");
+        }
+        if (lineRes.error) {
+          setLinesError(lineRes.error);
+          setStationLines([]);
+        } else {
+          setStationLines(lineRes.data.StationOfLines);
+          setLinesError("");
         }
       })
       .finally(() => {
-        setLoadingStations(false);
+        setLoadingBaseData(false);
       });
   }, []);
-
-  // 根據選擇的縣市過濾起始站
-  const filteredOriginStations = stations.filter((station) =>
-    station.StationAddress?.includes(selectedOriginCity)
-  );
-
-  // 根據選擇的縣市過濾終點站
-  const filteredDestStations = stations.filter((station) =>
-    station.StationAddress?.includes(selectedDestCity)
-  );
 
   // 當切換起始站縣市時，清除已選擇的起始站
   useEffect(() => {
@@ -98,6 +101,49 @@ export default function TrainPage() {
     setTimetableData([]);
     setTimetableError("");
   }, [selectedDestCity]);
+
+  // 當起始站、終點站或日期改變時，重新取得時刻表
+  useEffect(() => {
+    fetchTimetable();
+  }, [selectedOriginStation, selectedDestStation, selectedDate]);
+
+  // 取得某站屬於哪些路線
+  const getStationLineIDs = (stationID) => {
+    if (!stationID || !stationLines.length) return [];
+    return stationLines
+      .filter((line) => line.Stations.some((s) => s.StationID === stationID))
+      .map((line) => line.LineID);
+  };
+
+  // 取得兩站是否有共同路線
+  const isConnected = (originID, destID) => {
+    if (!originID || !destID) return true;
+    const originLines = getStationLineIDs(originID);
+    const destLines = getStationLineIDs(destID);
+    return originLines.some((id) => destLines.includes(id));
+  };
+
+  // 根據選擇的縣市與路線過濾起始站
+  const filteredOriginStations = stations.filter((station) => {
+    if (!station.StationAddress?.includes(selectedOriginCity)) return false;
+    // 若已選擇終點站，僅顯示有共同路線且不是同一站的起點站
+    if (selectedDestStation && selectedDestStation.StationID) {
+      if (station.StationID === selectedDestStation.StationID) return false;
+      return isConnected(station.StationID, selectedDestStation.StationID);
+    }
+    return true;
+  });
+
+  // 根據選擇的縣市與路線過濾終點站
+  const filteredDestStations = stations.filter((station) => {
+    if (!station.StationAddress?.includes(selectedDestCity)) return false;
+    // 若已選擇起始站，僅顯示有共同路線且不是同一站的終點站
+    if (selectedOriginStation && selectedOriginStation.StationID) {
+      if (station.StationID === selectedOriginStation.StationID) return false;
+      return isConnected(selectedOriginStation.StationID, station.StationID);
+    }
+    return true;
+  });
 
   // 取得時刻表資料
   const fetchTimetable = async () => {
@@ -122,11 +168,6 @@ export default function TrainPage() {
     }
   };
 
-  // 當起始站、終點站或日期改變時，重新取得時刻表
-  useEffect(() => {
-    fetchTimetable();
-  }, [selectedOriginStation, selectedDestStation, selectedDate]);
-
   // UI 渲染
   return (
     <div className="min-h-screen sm:min-h-[calc(100vh-80px)] bg-gray-50 py-8 px-4">
@@ -138,15 +179,17 @@ export default function TrainPage() {
         </h1>
 
         {/* 載入中提示 */}
-        {loadingStations && <div className="text-gray-500">載入中...</div>}
+        {loadingBaseData && <div className="text-gray-500">載入中...</div>}
 
         {/* 錯誤提示 */}
-        {stationsError && (
-          <div className="text-red-600 font-semibold">{stationsError}</div>
+        {(stationsError || linesError) && (
+          <div className="text-red-600 font-semibold">
+            {stationsError || linesError}
+          </div>
         )}
 
         {/* 選擇區域 */}
-        {!loadingStations && !stationsError && (
+        {!loadingBaseData && !stationsError && !linesError && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* 起始站區域 */}
@@ -285,76 +328,80 @@ export default function TrainPage() {
               </div>
             )}
 
-            {timetableData?.TrainTimetables?.length > 0 && (
-              <div className="mt-6 overflow-x-auto">
-                <table className="min-w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border px-4 py-2">車次</th>
-                      <th className="border px-4 py-2">車種</th>
-                      <th className="border px-4 py-2">出發時間</th>
-                      <th className="border px-4 py-2">抵達時間</th>
-                      <th className="border px-4 py-2">行駛時間</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {timetableData.TrainTimetables.map((train) => {
-                      const originStop = train.StopTimes.find(
-                        (stop) =>
-                          stop.StationID === selectedOriginStation.StationID
-                      );
-                      const destStop = train.StopTimes.find(
-                        (stop) =>
-                          stop.StationID === selectedDestStation.StationID
-                      );
-                      if (!originStop || !destStop) return null;
+            {selectedOriginStation &&
+              selectedDestStation &&
+              timetableData?.TrainTimetables?.length > 0 && (
+                <div className="mt-6 overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border px-4 py-2">車次</th>
+                        <th className="border px-4 py-2">車種</th>
+                        <th className="border px-4 py-2">出發時間</th>
+                        <th className="border px-4 py-2">抵達時間</th>
+                        <th className="border px-4 py-2">行駛時間</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timetableData.TrainTimetables.map((train) => {
+                        const originStop = train.StopTimes.find(
+                          (stop) =>
+                            stop.StationID === selectedOriginStation.StationID
+                        );
+                        const destStop = train.StopTimes.find(
+                          (stop) =>
+                            stop.StationID === selectedDestStation.StationID
+                        );
+                        if (!originStop || !destStop) return null;
 
-                      return (
-                        <tr
-                          key={train.TrainInfo.TrainNo}
-                          className="hover:bg-gray-50"
-                        >
-                          <td className="border px-4 py-2 text-center">
-                            {train.TrainInfo.TrainNo}
-                          </td>
-                          <td className="border px-4 py-2 text-center">
-                            {train.TrainInfo.TrainTypeName.Zh_tw}
-                          </td>
-                          <td className="border px-4 py-2 text-center">
-                            {originStop.DepartureTime}
-                          </td>
-                          <td className="border px-4 py-2 text-center">
-                            {destStop.ArrivalTime}
-                          </td>
-                          <td className="border px-4 py-2 text-center">
-                            {(() => {
-                              const depTime = originStop.DepartureTime;
-                              const arrTime = destStop.ArrivalTime;
-                              if (!depTime || !arrTime) return "-";
+                        return (
+                          <tr
+                            key={train.TrainInfo.TrainNo}
+                            className="hover:bg-gray-50"
+                          >
+                            <td className="border px-4 py-2 text-center">
+                              {train.TrainInfo.TrainNo}
+                            </td>
+                            <td className="border px-4 py-2 text-center">
+                              {train.TrainInfo.TrainTypeName.Zh_tw}
+                            </td>
+                            <td className="border px-4 py-2 text-center">
+                              {originStop.DepartureTime}
+                            </td>
+                            <td className="border px-4 py-2 text-center">
+                              {destStop.ArrivalTime}
+                            </td>
+                            <td className="border px-4 py-2 text-center">
+                              {(() => {
+                                const depTime = originStop.DepartureTime;
+                                const arrTime = destStop.ArrivalTime;
+                                if (!depTime || !arrTime) return "-";
 
-                              const [depHour, depMin] = depTime
-                                .split(":")
-                                .map(Number);
-                              const [arrHour, arrMin] = arrTime
-                                .split(":")
-                                .map(Number);
+                                const [depHour, depMin] = depTime
+                                  .split(":")
+                                  .map(Number);
+                                const [arrHour, arrMin] = arrTime
+                                  .split(":")
+                                  .map(Number);
 
-                              let diffMin =
-                                arrHour * 60 + arrMin - (depHour * 60 + depMin);
-                              if (diffMin < 0) diffMin += 24 * 60;
+                                let diffMin =
+                                  arrHour * 60 +
+                                  arrMin -
+                                  (depHour * 60 + depMin);
+                                if (diffMin < 0) diffMin += 24 * 60;
 
-                              const hours = Math.floor(diffMin / 60);
-                              const mins = diffMin % 60;
-                              return `${hours}小時${mins}分鐘`;
-                            })()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                                const hours = Math.floor(diffMin / 60);
+                                const mins = diffMin % 60;
+                                return `${hours}小時${mins}分鐘`;
+                              })()}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
           </div>
         )}
       </div>
