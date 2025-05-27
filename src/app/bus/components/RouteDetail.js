@@ -8,7 +8,7 @@ function RefreshCountdown({ onRefresh }) {
 
   useEffect(() => {
     if (updating || error) return;
-    console.log(`${count} 秒`, new Date().toISOString());
+
     if (count > 0) {
       const timerId = setTimeout(() => setCount(count - 1), 1000);
       return () => clearTimeout(timerId);

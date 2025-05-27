@@ -129,7 +129,7 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
                 {route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw}
               </span>
               <span className="text-sm text-gray-500">
-                {route.DepartureStopNameZh} → {route.DestinationStopNameZh}
+                {route.DepartureStopNameZh} – {route.DestinationStopNameZh}
               </span>
               <span className="text-xs text-gray-400">
                 {route.Operators?.map((op) => op.OperatorName.Zh_tw).join(", ")}

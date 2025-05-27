@@ -99,10 +99,16 @@ export function useBusApi() {
                   LastBusTime: sub.LastBusTime,
                   HolidayFirstBusTime: sub.HolidayFirstBusTime,
                   HolidayLastBusTime: sub.HolidayLastBusTime,
-                  DepartureStopNameZh:
-                    sub.DepartureStopNameZh ?? route.DepartureStopNameZh,
-                  DestinationStopNameZh:
-                    sub.DestinationStopNameZh ?? route.DestinationStopNameZh,
+                  DepartureStopNameZh: sub.DepartureStopNameZh
+                    ? sub.DepartureStopNameZh
+                    : sub.Direction === 0
+                    ? route.DepartureStopNameZh
+                    : route.DestinationStopNameZh,
+                  DestinationStopNameZh: sub.DestinationStopNameZh
+                    ? sub.DestinationStopNameZh
+                    : sub.Direction === 0
+                    ? route.DestinationStopNameZh
+                    : route.DepartureStopNameZh,
                 });
               });
             } else {
