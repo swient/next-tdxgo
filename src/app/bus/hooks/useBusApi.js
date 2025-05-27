@@ -99,6 +99,10 @@ export function useBusApi() {
                   LastBusTime: sub.LastBusTime,
                   HolidayFirstBusTime: sub.HolidayFirstBusTime,
                   HolidayLastBusTime: sub.HolidayLastBusTime,
+                  DepartureStopNameZh:
+                    sub.DepartureStopNameZh ?? route.DepartureStopNameZh,
+                  DestinationStopNameZh:
+                    sub.DestinationStopNameZh ?? route.DestinationStopNameZh,
                 });
               });
             } else {
@@ -186,6 +190,33 @@ export function useBusApi() {
     }
   }, [selectedRoute, city]);
 
+  // 更新 ETA 與即時車輛
+  async function refreshLiveBusStatus() {
+    if (!city) return;
+    const [etaRes, realTimeRes] = await Promise.all([
+      fetchWithError(
+        `${BASE_URL}/Bus/EstimatedTimeOfArrival/City/${city.key}?$format=JSON`
+      ),
+      fetchWithError(
+        `${BASE_URL}/Bus/RealTimeNearStop/City/${city.key}?$format=JSON`
+      ),
+    ]);
+    if (etaRes.error) {
+      return { error: "取得 ETA 失敗" };
+    } else {
+      etaCache.current[city.key] = etaRes.data;
+      setEta(etaRes.data);
+      setErrors((prev) => ({ ...prev, eta: "" }));
+    }
+    if (realTimeRes.error) {
+      return { error: "取得即時車輛失敗" };
+    } else {
+      realTimeBusesCache.current[city.key] = realTimeRes.data;
+      setRealTimeBuses(realTimeRes.data);
+      setErrors((prev) => ({ ...prev, realTimeBuses: "" }));
+    }
+  }
+
   return {
     city,
     setCity,
@@ -199,5 +230,6 @@ export function useBusApi() {
     setDirection,
     loading,
     errors,
+    refreshLiveBusStatus,
   };
 }

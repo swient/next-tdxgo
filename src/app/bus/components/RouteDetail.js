@@ -1,4 +1,40 @@
-import React from "react";
+import React, { useEffect } from "react";
+
+// 刷新公車及時狀態倒數計時器
+function RefreshCountdown({ onRefresh }) {
+  const [count, setCount] = React.useState(30);
+  const [updating, setUpdating] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  useEffect(() => {
+    if (updating || error) return;
+    console.log(`${count} 秒`, new Date().toISOString());
+    if (count > 0) {
+      const timerId = setTimeout(() => setCount(count - 1), 1000);
+      return () => clearTimeout(timerId);
+    } else {
+      (async () => {
+        setUpdating(true);
+        const result = await (onRefresh && onRefresh());
+        if (result && result.error) setError(result.error);
+        setCount(30);
+        setUpdating(false);
+      })();
+    }
+  }, [count, updating, error]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timerId = setTimeout(() => setError(""), 3000);
+    return () => clearTimeout(timerId);
+  }, [error]);
+
+  return (
+    <span className="text-sm text-gray-500">
+      {error ? error : updating ? "更新中..." : `${count} 秒後自動更新`}
+    </span>
+  );
+}
 
 export default function RouteDetail({
   routes,
@@ -9,6 +45,7 @@ export default function RouteDetail({
   realTimeBuses,
   direction,
   setDirection,
+  refreshLiveBusStatus,
 }) {
   if (!selectedRoute) return null;
 
@@ -26,67 +63,64 @@ export default function RouteDetail({
         {selectedRoute.DestinationStopNameZh}）
       </h2>
       {/* Tab 切換 */}
-      <div className="flex gap-2 mb-4">
-        <button
-          className={`px-4 py-2 rounded-t ${
-            direction === 0
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-          onClick={() => setDirection(0)}
-        >
-          往
-          {routes.find(
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-2">
+          {routes.some(
             (r) =>
               r.RouteUID === selectedRoute.RouteUID &&
               r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
-              JSON.stringify(r.Operators) ===
-                JSON.stringify(selectedRoute.Operators) &&
               r.Direction === 0
-          )?.DestinationStopNameZh || "去程"}
-        </button>
-        {routes.some(
-          (r) =>
-            r.RouteUID === selectedRoute.RouteUID &&
-            r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
-            JSON.stringify(r.Operators) ===
-              JSON.stringify(selectedRoute.Operators) &&
-            r.Direction === 1
-        ) && (
-          <button
-            className={`px-4 py-2 rounded-t ${
-              direction === 1
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-            onClick={() => setDirection(1)}
-          >
-            往
-            {(() => {
-              const match = routes.find(
-                (r) =>
-                  r.RouteUID === selectedRoute.RouteUID &&
-                  r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
-                  JSON.stringify(r.Operators) ===
-                    JSON.stringify(selectedRoute.Operators) &&
-                  r.Direction === 1
-              );
-              if (!match) return "回程";
-              const stopList =
-                stops?.find(
-                  (s) =>
-                    s.RouteUID === match.RouteUID &&
-                    s.SubRouteUID === match.SubRouteUID &&
-                    s.Direction === 1
-                ) || null;
-              return (
-                stopList?.Stops?.[stopList.Stops.length - 1]?.StopName?.Zh_tw ||
-                match.DestinationStopNameZh ||
-                "回程"
-              );
-            })()}
-          </button>
-        )}
+          ) && (
+            <button
+              className={`px-4 py-2 rounded-t ${
+                direction === 0
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+              onClick={() => setDirection(0)}
+            >
+              往
+              {(() => {
+                const match = routes.find(
+                  (r) =>
+                    r.RouteUID === selectedRoute.RouteUID &&
+                    r.SubRouteName?.Zh_tw ===
+                      selectedRoute.SubRouteName?.Zh_tw &&
+                    r.Direction === 0
+                );
+                return match?.DestinationStopNameZh || "去程";
+              })()}
+            </button>
+          )}
+          {routes.some(
+            (r) =>
+              r.RouteUID === selectedRoute.RouteUID &&
+              r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
+              r.Direction === 1
+          ) && (
+            <button
+              className={`px-4 py-2 rounded-t ${
+                direction === 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+              onClick={() => setDirection(1)}
+            >
+              往
+              {(() => {
+                const match = routes.find(
+                  (r) =>
+                    r.RouteUID === selectedRoute.RouteUID &&
+                    r.SubRouteName?.Zh_tw ===
+                      selectedRoute.SubRouteName?.Zh_tw &&
+                    r.Direction === 1
+                );
+                return match?.DestinationStopNameZh || "回程";
+              })()}
+            </button>
+          )}
+        </div>
+        <RefreshCountdown onRefresh={refreshLiveBusStatus} />
       </div>
       <div>
         {stops

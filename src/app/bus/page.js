@@ -20,6 +20,7 @@ export default function BusPage() {
     setDirection,
     loading,
     errors,
+    refreshLiveBusStatus,
   } = useBusApi();
 
   const hasError =
@@ -70,6 +71,7 @@ export default function BusPage() {
             realTimeBuses={realTimeBuses}
             direction={direction}
             setDirection={setDirection}
+            refreshLiveBusStatus={refreshLiveBusStatus}
           />
         )}
       </div>
