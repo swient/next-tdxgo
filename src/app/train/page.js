@@ -1,15 +1,6 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-
-import { fetchWithError } from "../utils/fetchUtils";
-
-// 台鐵車站資訊頁面
-// 功能：
-// 1. 提供縣市下拉選單
-// 2. 根據選擇的縣市顯示該縣市的車站下拉選單
-// 3. 顯示選擇車站的詳細資訊
-
-const BASE_URL = "https://tdx.transportdata.tw/api/basic";
+import React from "react";
+import { useTrainApi } from "./hooks/useTrainApi";
 
 // 縣市清單
 const CITY_LIST = [
@@ -34,78 +25,24 @@ const CITY_LIST = [
 ];
 
 export default function TrainPage() {
-  // 儲存所有車站資料
-  const [stations, setStations] = useState([]);
-  // 儲存取得車站資料時的錯誤訊息
-  const [stationsError, setStationsError] = useState("");
-  // 標示是否正在載入車站與路線資料
-  const [loadingBaseData, setLoadingBaseData] = useState(false);
-  // 標示是否正在載入時刻表資料
-  const [loadingTimetable, setLoadingTimetable] = useState(false);
-  // 儲存選擇的起始站縣市
-  const [selectedOriginCity, setSelectedOriginCity] = useState("");
-  // 儲存選擇的終點站縣市
-  const [selectedDestCity, setSelectedDestCity] = useState("");
-  // 儲存選擇的起始站
-  const [selectedOriginStation, setSelectedOriginStation] = useState(null);
-  // 儲存選擇的終點站
-  const [selectedDestStation, setSelectedDestStation] = useState(null);
-  // 儲存選擇的日期
-  const [selectedDate, setSelectedDate] = useState("");
-  // 儲存時刻表資料
-  const [timetableData, setTimetableData] = useState(null);
-  // 儲存時刻表錯誤訊息
-  const [timetableError, setTimetableError] = useState("");
-  // 儲存路線資料
-  const [stationLines, setStationLines] = useState([]);
-  const [linesError, setLinesError] = useState("");
-
-  // 並行取得車站與路線資料
-  useEffect(() => {
-    setLoadingBaseData(true);
-    Promise.all([
-      fetchWithError(`${BASE_URL}/v3/Rail/TRA/Station?$format=JSON`),
-      fetchWithError(`${BASE_URL}/v3/Rail/TRA/StationOfLine?$format=JSON`),
-    ])
-      .then(([stationRes, lineRes]) => {
-        if (stationRes.error) {
-          setStationsError(stationRes.error);
-          setStations([]);
-        } else {
-          setStations(stationRes.data.Stations);
-          setStationsError("");
-        }
-        if (lineRes.error) {
-          setLinesError(lineRes.error);
-          setStationLines([]);
-        } else {
-          setStationLines(lineRes.data.StationOfLines);
-          setLinesError("");
-        }
-      })
-      .finally(() => {
-        setLoadingBaseData(false);
-      });
-  }, []);
-
-  // 當切換起始站縣市時，清除已選擇的起始站
-  useEffect(() => {
-    setSelectedOriginStation(null);
-    setTimetableData([]);
-    setTimetableError("");
-  }, [selectedOriginCity]);
-
-  // 當切換終點站縣市時，清除已選擇的終點站
-  useEffect(() => {
-    setSelectedDestStation(null);
-    setTimetableData([]);
-    setTimetableError("");
-  }, [selectedDestCity]);
-
-  // 當起始站、終點站或日期改變時，重新取得時刻表
-  useEffect(() => {
-    fetchTimetable();
-  }, [selectedOriginStation, selectedDestStation, selectedDate]);
+  const {
+    stations,
+    stationLines,
+    timetableData,
+    selectedOriginCity,
+    setSelectedOriginCity,
+    selectedDestCity,
+    setSelectedDestCity,
+    selectedOriginStation,
+    setSelectedOriginStation,
+    selectedDestStation,
+    setSelectedDestStation,
+    selectedDate,
+    setSelectedDate,
+    loadingBaseData,
+    loadingTimetable,
+    errors,
+  } = useTrainApi();
 
   // 取得某站屬於哪些路線
   const getStationLineIDs = (stationID) => {
@@ -145,29 +82,6 @@ export default function TrainPage() {
     return true;
   });
 
-  // 取得時刻表資料
-  const fetchTimetable = async () => {
-    if (!selectedOriginStation || !selectedDestStation || !selectedDate) return;
-
-    setLoadingTimetable(true);
-    setTimetableError("");
-    setTimetableData([]);
-    // 保持原始的 YYYY-MM-DD 格式
-    const formattedDate = selectedDate;
-    const url = `${BASE_URL}/v3/Rail/TRA/DailyTrainTimetable/OD/${selectedOriginStation.StationID}/to/${selectedDestStation.StationID}/${formattedDate}`;
-    console.log("請求 URL:", url);
-    console.log(url);
-    const response = await fetchWithError(url);
-    setLoadingTimetable(false);
-
-    if (response.error) {
-      setTimetableError(response.error);
-    } else {
-      console.log("時刻表資料:", response.data);
-      setTimetableData(response.data);
-    }
-  };
-
   // UI 渲染
   return (
     <div className="min-h-screen sm:min-h-[calc(100vh-80px)] bg-gray-50 py-8 px-4">
@@ -182,14 +96,14 @@ export default function TrainPage() {
         {loadingBaseData && <div className="text-gray-500">載入中...</div>}
 
         {/* 錯誤提示 */}
-        {(stationsError || linesError) && (
+        {(errors.stations || errors.lines) && (
           <div className="text-red-600 font-semibold">
-            {stationsError || linesError}
+            {errors.stations || errors.lines}
           </div>
         )}
 
         {/* 選擇區域 */}
-        {!loadingBaseData && !stationsError && !linesError && (
+        {!loadingBaseData && !errors.stations && !errors.lines && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* 起始站區域 */}
@@ -332,9 +246,9 @@ export default function TrainPage() {
               </div>
             )}
 
-            {timetableError && (
+            {errors.timetable && (
               <div className="mt-6 text-red-600 font-semibold">
-                {timetableError}
+                {errors.timetable}
               </div>
             )}
 
