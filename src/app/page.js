@@ -11,12 +11,12 @@ const transportList = [
     available: true,
   },
   {
-    key: "metro",
-    name: "捷運",
-    desc: "都會區捷運動態與車輛資訊（即將推出）",
-    icon: "/icons/metro.svg",
-    href: "#",
-    available: false,
+    key: "bike",
+    name: "自行車",
+    desc: "全台公共自行車車位及車輛資訊",
+    icon: "/icons/youbike.svg",
+    href: "/bike",
+    available: true,
   },
   {
     key: "train",

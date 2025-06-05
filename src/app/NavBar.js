@@ -18,9 +18,12 @@ export default function NavBar() {
         >
           公車
         </Link>
-        <span className="pointer-events-none opacity-60 font-medium text-gray-400 dark:text-gray-500">
-          捷運
-        </span>
+        <Link
+          href="/bike"
+          className="hover:underline font-medium text-gray-700 dark:text-gray-200"
+        >
+          自行車
+        </Link>
         <Link
           href="/train"
           className="hover:underline font-medium text-gray-700 dark:text-gray-200"
