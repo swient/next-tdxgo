@@ -44,8 +44,12 @@ export default function BusPage() {
               ← 返回縣市選擇
             </button>
             <h2 className="text-lg font-bold mb-2">{city.name}公車</h2>
-            {loading && <div className="text-gray-500">載入中...</div>}
-            {hasError && (
+            {loading && (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-gray-500">載入資料中，請稍候...</div>
+              </div>
+            )}
+            {!loading && hasError && (
               <div className="text-red-600 font-semibold">
                 {errors.routes ||
                   errors.stops ||

@@ -46,13 +46,6 @@ export default function BikeStationPage() {
           全台共享單車資訊
         </h1>
 
-        {/* 錯誤提示 */}
-        {(errors.stations || errors.availability) && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            <p>{errors.stations || errors.availability}</p>
-          </div>
-        )}
-
         {/* 城市選擇器 */}
         {!selectedCity ? (
           <CitySelector onCityChange={setSelectedCity} disabled={loading} />
@@ -72,23 +65,24 @@ export default function BikeStationPage() {
               </div>
             </h2>
             {/* 載入中顯示 */}
-            {loading ? (
+            {loading && (
               <div className="flex justify-center items-center h-64">
                 <div className="text-gray-600">載入資料中，請稍候...</div>
               </div>
-            ) : stations.length > 0 ? (
+            )}
+            {/* 錯誤提示 */}
+            {!loading && (errors.stations || errors.availability) && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                <p>{errors.stations || errors.availability}</p>
+              </div>
+            )}
+            {!loading && !errors.stations && !errors.availability && (
               <StationList
                 stations={stations}
                 lastUpdateTime={utils.formatUpdateTime(lastUpdateTime)}
                 onRefresh={refreshBikeData}
                 loading={loading}
               />
-            ) : (
-              <div className="text-center text-gray-600 py-12">
-                {errors.stations || errors.availability
-                  ? "無法顯示資料"
-                  : "找不到站點資料"}
-              </div>
             )}
           </div>
         )}

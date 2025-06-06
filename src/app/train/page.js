@@ -35,10 +35,14 @@ export default function TrainPage() {
         </h1>
 
         {/* 載入中提示 */}
-        {loadingBaseData && <div className="text-gray-500">載入中...</div>}
+        {loadingBaseData && (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-500">載入資料中，請稍候...</div>
+          </div>
+        )}
 
         {/* 錯誤提示 */}
-        {(errors.stations || errors.lines) && (
+        {!loadingBaseData && (errors.stations || errors.lines) && (
           <div className="text-red-600 font-semibold">
             {errors.stations || errors.lines}
           </div>
@@ -69,7 +73,7 @@ export default function TrainPage() {
               </div>
             )}
 
-            {errors.timetable && (
+            {!loadingTimetable && errors.timetable && (
               <div className="mt-6 text-red-600 font-semibold">
                 {errors.timetable}
               </div>
