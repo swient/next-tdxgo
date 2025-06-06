@@ -105,10 +105,10 @@ export default function StationList({
   const displayStations = getSortedStations(
     getFilteredStations(stations, filterType).filter(
       (station) =>
-        station.StationName.Zh_tw.toLowerCase().includes(
+        (station.StationName?.Zh_tw?.toLowerCase() || "").includes(
           searchText.toLowerCase()
         ) ||
-        station.StationAddress.Zh_tw.toLowerCase().includes(
+        (station.StationAddress?.Zh_tw?.toLowerCase() || "").includes(
           searchText.toLowerCase()
         )
     ),

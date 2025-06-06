@@ -38,8 +38,8 @@ export default function BikeStationPage() {
   }, [selectedCity, refreshBikeData]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen sm:min-h-[calc(100vh-70px)] bg-gray-50 py-8 px-4">
+      <main className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg sm:px-4 px-6 lg:px-8 py-8">
         {/* 頁面標題 */}
         <h1 className="text-2xl font-bold mb-4 text-blue-700 flex items-center gap-2">
           <img src="/icons/youbike.svg" alt="youbike" className="w-8 h-8" />
@@ -55,11 +55,7 @@ export default function BikeStationPage() {
 
         {/* 城市選擇器 */}
         {!selectedCity ? (
-          <CitySelector
-            selectedCity={selectedCity}
-            onCityChange={setSelectedCity}
-            disabled={loading}
-          />
+          <CitySelector onCityChange={setSelectedCity} disabled={loading} />
         ) : (
           <div>
             <button

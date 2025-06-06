@@ -112,27 +112,6 @@ export function useBikeApi() {
   }, [selectedCity]);
 
   /**
-   * 城市選擇處理
-   * 處理使用者選擇城市的邏輯
-   * - 選擇新城市：更換城市並載入新資料
-   * - 重複選擇：重新整理當前城市資料
-   */
-  /*因增加返回鍵，暫時停用此功能
-  const handleCitySelect = useCallback(
-    (city) => {
-      if (city === selectedCity) {
-        // 如果選擇同一個城市，重新載入資料
-        refreshBikeData();
-      } else {
-        // 選擇不同城市，更新選擇並載入新資料
-        setSelectedCity(city);
-      }
-    },
-    [selectedCity, refreshBikeData]
-  );
-  */
-
-  /**
    * 資料整合處理
    * 將站點基本資料和即時可用性資料整合
    * 回傳完整的站點資訊供顯示使用
@@ -144,7 +123,7 @@ export function useBikeApi() {
 
   return {
     selectedCity,
-    setSelectedCity /*: handleCitySelect*/,
+    setSelectedCity,
     stations: combinedStations,
     loading,
     errors,
