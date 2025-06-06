@@ -117,6 +117,7 @@ export function useBikeApi() {
    * - 選擇新城市：更換城市並載入新資料
    * - 重複選擇：重新整理當前城市資料
    */
+  /*因增加返回鍵，暫時停用此功能
   const handleCitySelect = useCallback(
     (city) => {
       if (city === selectedCity) {
@@ -129,6 +130,7 @@ export function useBikeApi() {
     },
     [selectedCity, refreshBikeData]
   );
+  */
 
   /**
    * 資料整合處理
@@ -142,7 +144,7 @@ export function useBikeApi() {
 
   return {
     selectedCity,
-    setSelectedCity: handleCitySelect,
+    setSelectedCity /*: handleCitySelect*/,
     stations: combinedStations,
     loading,
     errors,

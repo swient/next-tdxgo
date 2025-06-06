@@ -5,9 +5,9 @@ import { CITIES } from "../constants";
 
 export default function CitySelector({ selectedCity, onCityChange, disabled }) {
   return (
-    <div>
+    <div className="bg-white shadow rounded-lg p-6 mb-8">
       <label className="block mb-2 text-gray-700 font-semibold">選擇縣市</label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2">
         {CITIES.map((city) => (
           <button
             key={city.id}

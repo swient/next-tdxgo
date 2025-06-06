@@ -27,7 +27,6 @@ export const CITIES = [
   { id: "ChiayiCounty", name: "嘉義縣" },
   { id: "PingtungCounty", name: "屏東縣" },
   { id: "TaitungCounty", name: "臺東縣" },
-  { id: "KinmenCounty", name: "金門縣" },
 ];
 
 /**

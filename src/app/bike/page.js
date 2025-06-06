@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useBikeApi } from "./hooks/useBikeApi";
 import { utils } from "./utils";
-import { AUTO_UPDATE_INTERVAL } from "./constants";
+import { AUTO_UPDATE_INTERVAL, CITIES } from "./constants";
 import CitySelector from "./components/CitySelector";
 import StationList from "./components/StationList";
 
@@ -54,31 +54,46 @@ export default function BikeStationPage() {
         )}
 
         {/* 城市選擇器 */}
-        <div className="bg-white shadow rounded-lg p-6 mb-8">
+        {!selectedCity ? (
           <CitySelector
             selectedCity={selectedCity}
             onCityChange={setSelectedCity}
             disabled={loading}
           />
-        </div>
-
-        {/* 載入中顯示 */}
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="text-gray-600">載入資料中，請稍候...</div>
-          </div>
-        ) : stations.length > 0 ? (
-          <StationList
-            stations={stations}
-            lastUpdateTime={utils.formatUpdateTime(lastUpdateTime)}
-            onRefresh={refreshBikeData}
-            loading={loading}
-          />
         ) : (
-          <div className="text-center text-gray-600 py-12">
-            {errors.stations || errors.availability
-              ? "無法顯示資料"
-              : "找不到站點資料"}
+          <div>
+            <button
+              className="text-blue-600 hover:underline mb-4"
+              onClick={() => setSelectedCity("")}
+            >
+              ← 返回縣市選擇
+            </button>
+            <h2 className="text-lg font-bold mb-2">
+              <div>
+                {CITIES.find((city) => city.id === selectedCity)?.name ||
+                  "選擇的城市"}
+                共享單車站點
+              </div>
+            </h2>
+            {/* 載入中顯示 */}
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-gray-600">載入資料中，請稍候...</div>
+              </div>
+            ) : stations.length > 0 ? (
+              <StationList
+                stations={stations}
+                lastUpdateTime={utils.formatUpdateTime(lastUpdateTime)}
+                onRefresh={refreshBikeData}
+                loading={loading}
+              />
+            ) : (
+              <div className="text-center text-gray-600 py-12">
+                {errors.stations || errors.availability
+                  ? "無法顯示資料"
+                  : "找不到站點資料"}
+              </div>
+            )}
           </div>
         )}
       </main>
