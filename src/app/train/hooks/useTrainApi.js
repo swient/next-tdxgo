@@ -6,6 +6,7 @@ const BASE_URL = "https://tdx.transportdata.tw/api/basic";
 export function useTrainApi() {
   const [stations, setStations] = useState([]);
   const [stationLines, setStationLines] = useState([]);
+  const [liveBoard, setLiveBoard] = useState([]);
   const [selectedOriginCity, setSelectedOriginCity] = useState("");
   const [selectedDestCity, setSelectedDestCity] = useState("");
   const [selectedOriginStation, setSelectedOriginStation] = useState(null);
@@ -17,6 +18,7 @@ export function useTrainApi() {
   const [errors, setErrors] = useState({
     stations: "",
     lines: "",
+    liveBoard: "",
     timetable: "",
   });
 
@@ -26,8 +28,9 @@ export function useTrainApi() {
     Promise.all([
       fetchWithError(`${BASE_URL}/v3/Rail/TRA/Station?$format=JSON`),
       fetchWithError(`${BASE_URL}/v3/Rail/TRA/StationOfLine?$format=JSON`),
+      fetchWithError(`${BASE_URL}/v3/Rail/TRA/StationLiveBoard?$format=JSON`),
     ])
-      .then(([stationRes, lineRes]) => {
+      .then(([stationRes, lineRes, liveBoardRes]) => {
         // 處理車站資料
         if (stationRes.error) {
           setStations([]);
@@ -47,6 +50,16 @@ export function useTrainApi() {
           }));
         } else {
           setStationLines(lineRes.data.StationOfLines);
+        }
+        // 處理即時列車資料
+        if (liveBoardRes.error) {
+          setLiveBoard([]);
+          setErrors((prev) => ({
+            ...prev,
+            liveBoard: liveBoardRes.error,
+          }));
+        } else {
+          setLiveBoard(liveBoardRes.data.StationLiveBoards);
         }
       })
       .finally(() => {
@@ -91,6 +104,7 @@ export function useTrainApi() {
   return {
     stations,
     stationLines,
+    liveBoard,
     timetableData,
     selectedOriginCity,
     setSelectedOriginCity,

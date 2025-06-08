@@ -3,12 +3,12 @@ import React from "react";
 import StationSelector from "./components/StationSelector";
 import TimetableDetail from "./components/TimetableDetail";
 import { useTrainApi } from "./hooks/useTrainApi";
-import { useTrainDelayApi } from "./hooks/useTrainDelayApi";
 
 export default function TrainPage() {
   const {
     stations,
     stationLines,
+    liveBoard,
     timetableData,
     selectedOriginCity,
     setSelectedOriginCity,
@@ -25,15 +25,6 @@ export default function TrainPage() {
     errors,
   } = useTrainApi();
 
-  // 取得誤點資料
-  const hasTimetable =
-    Array.isArray(timetableData?.TrainTimetables) &&
-    timetableData.TrainTimetables.length > 0;
-  const {
-    delayData,
-    loading: loadingDelay,
-    error: errorDelay,
-  } = useTrainDelayApi([true]);
   // UI 渲染
   return (
     <div className="min-h-screen sm:min-h-[calc(100vh-80px)] bg-gray-50 py-8 px-4">
@@ -52,61 +43,60 @@ export default function TrainPage() {
         )}
 
         {/* 錯誤提示 */}
-        {!loadingBaseData && (errors.stations || errors.lines) && (
-          <div className="text-red-600 font-semibold">
-            {errors.stations || errors.lines}
-          </div>
-        )}
+        {!loadingBaseData &&
+          (errors.stations || errors.lines || errors.liveBoard) && (
+            <div className="text-red-600 font-semibold">
+              {errors.stations || errors.lines || errors.liveBoard}
+            </div>
+          )}
 
         {/* 選擇區域 */}
-        {!loadingBaseData && !errors.stations && !errors.lines && (
-          <div className="space-y-4">
-            <StationSelector
-              stations={stations}
-              stationLines={stationLines}
-              selectedOriginCity={selectedOriginCity}
-              setSelectedOriginCity={setSelectedOriginCity}
-              selectedDestCity={selectedDestCity}
-              setSelectedDestCity={setSelectedDestCity}
-              selectedOriginStation={selectedOriginStation}
-              setSelectedOriginStation={setSelectedOriginStation}
-              selectedDestStation={selectedDestStation}
-              setSelectedDestStation={setSelectedDestStation}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-            />
+        {!loadingBaseData &&
+          !errors.stations &&
+          !errors.lines &&
+          !errors.liveBoard && (
+            <div className="space-y-4">
+              <StationSelector
+                stations={stations}
+                stationLines={stationLines}
+                selectedOriginCity={selectedOriginCity}
+                setSelectedOriginCity={setSelectedOriginCity}
+                selectedDestCity={selectedDestCity}
+                setSelectedDestCity={setSelectedDestCity}
+                selectedOriginStation={selectedOriginStation}
+                setSelectedOriginStation={setSelectedOriginStation}
+                selectedDestStation={selectedDestStation}
+                setSelectedDestStation={setSelectedDestStation}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+              />
 
-            {/* 時刻表顯示區域 */}
-            {loadingTimetable && (
-              <div className="mt-6 text-center text-gray-500">
-                載入時刻表中...
-              </div>
-            )}
-
-            {!loadingTimetable && errors.timetable && (
-              <div className="mt-6 text-red-600 font-semibold">
-                {errors.timetable}
-              </div>
-            )}
-
-            {selectedOriginStation &&
-              selectedDestStation &&
-              timetableData?.TrainTimetables?.length > 0 &&
-              (loadingDelay ? (
+              {/* 時刻表顯示區域 */}
+              {loadingTimetable && (
                 <div className="mt-6 text-center text-gray-500">
-                  載入誤點資料中...
+                  載入時刻表中...
                 </div>
-              ) : (
-                <TimetableDetail
-                  timetableData={timetableData}
-                  selectedOriginStation={selectedOriginStation}
-                  selectedDestStation={selectedDestStation}
-                  selectedDate={selectedDate}
-                  delayData={delayData}
-                />
-              ))}
-          </div>
-        )}
+              )}
+
+              {!loadingTimetable && errors.timetable && (
+                <div className="mt-6 text-red-600 font-semibold">
+                  {errors.timetable}
+                </div>
+              )}
+
+              {selectedOriginStation &&
+                selectedDestStation &&
+                timetableData?.TrainTimetables?.length > 0 && (
+                  <TimetableDetail
+                    timetableData={timetableData}
+                    selectedOriginStation={selectedOriginStation}
+                    selectedDestStation={selectedDestStation}
+                    selectedDate={selectedDate}
+                    liveBoard={liveBoard}
+                  />
+                )}
+            </div>
+          )}
       </div>
     </div>
   );

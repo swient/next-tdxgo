@@ -5,7 +5,7 @@ export default function TimetableDetail({
   timetableData,
   selectedOriginStation,
   selectedDestStation,
-  delayData,
+  liveBoard,
   selectedDate,
 }) {
   const filteredList = timetableData.TrainTimetables.map((train) => {
@@ -35,13 +35,10 @@ export default function TimetableDetail({
           {filteredList.map(({ train, originStop, destStop }) => {
             // 比對車號
             let delay = {};
-            if (delayData && Array.isArray(delayData) && delayData.length > 0) {
-              delay = delayData.find(
+            if (liveBoard && Array.isArray(liveBoard) && liveBoard.length > 0) {
+              delay = liveBoard.find(
                 (d) => d.TrainNo === train.TrainInfo.TrainNo
               );
-            }
-            if (delay) {
-              console.log("誤點資料：", delay);
             }
             return (
               <React.Fragment key={train.TrainInfo.TrainNo}>
