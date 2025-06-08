@@ -128,11 +128,11 @@ export default function StationSelector({
         )}
       </div>
 
-      {/* 終點站區域 */}
+      {/* 抵達站區域 */}
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            終點站縣市
+            抵達站縣市
           </label>
           <select
             value={selectedDestCity}
@@ -151,7 +151,7 @@ export default function StationSelector({
         {selectedDestCity && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              終點站
+              抵達站
             </label>
             <select
               value={selectedDestStation ? selectedDestStation.StationID : ""}
@@ -163,7 +163,7 @@ export default function StationSelector({
               }}
               className="w-full p-2 border rounded-lg"
             >
-              <option value="">請選擇終點站</option>
+              <option value="">請選擇抵達站</option>
               {filteredDestStations
                 .sort((a, b) => a.StationID.localeCompare(b.StationID))
                 .map((station) => (

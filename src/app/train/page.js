@@ -3,6 +3,7 @@ import React from "react";
 import StationSelector from "./components/StationSelector";
 import TimetableDetail from "./components/TimetableDetail";
 import { useTrainApi } from "./hooks/useTrainApi";
+import { useTrainDelayApi } from "./hooks/useTrainDelayApi";
 
 export default function TrainPage() {
   const {
@@ -24,6 +25,15 @@ export default function TrainPage() {
     errors,
   } = useTrainApi();
 
+  // 取得誤點資料
+  const hasTimetable =
+    Array.isArray(timetableData?.TrainTimetables) &&
+    timetableData.TrainTimetables.length > 0;
+  const {
+    delayData,
+    loading: loadingDelay,
+    error: errorDelay,
+  } = useTrainDelayApi([true]);
   // UI 渲染
   return (
     <div className="min-h-screen sm:min-h-[calc(100vh-80px)] bg-gray-50 py-8 px-4">
@@ -81,13 +91,20 @@ export default function TrainPage() {
 
             {selectedOriginStation &&
               selectedDestStation &&
-              timetableData?.TrainTimetables?.length > 0 && (
+              timetableData?.TrainTimetables?.length > 0 &&
+              (loadingDelay ? (
+                <div className="mt-6 text-center text-gray-500">
+                  載入誤點資料中...
+                </div>
+              ) : (
                 <TimetableDetail
                   timetableData={timetableData}
                   selectedOriginStation={selectedOriginStation}
                   selectedDestStation={selectedDestStation}
+                  selectedDate={selectedDate}
+                  delayData={delayData}
                 />
-              )}
+              ))}
           </div>
         )}
       </div>

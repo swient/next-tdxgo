@@ -5,7 +5,22 @@ export default function TimetableDetail({
   timetableData,
   selectedOriginStation,
   selectedDestStation,
+  delayData,
+  selectedDate,
 }) {
+  const filteredList = timetableData.TrainTimetables.map((train) => {
+    const originStop = train.StopTimes.find(
+      (stop) => stop.StationID === selectedOriginStation.StationID
+    );
+    const destStop = train.StopTimes.find(
+      (stop) => stop.StationID === selectedDestStation.StationID
+    );
+    return { train, originStop, destStop };
+  })
+    .filter(({ originStop, destStop }) => originStop && destStop)
+    .sort((a, b) =>
+      a.originStop.DepartureTime.localeCompare(b.originStop.DepartureTime)
+    );
   return (
     <div className="mt-6 overflow-x-auto">
       <table className="min-w-full border-collapse">
@@ -13,25 +28,22 @@ export default function TimetableDetail({
           <tr className="bg-gray-50">
             <th className="border px-4 py-2">車次 / 車種</th>
             <th className="border px-4 py-2">出發→抵達 / 行駛時間</th>
+            <th className="border px-4 py-2">即時資訊</th>
           </tr>
         </thead>
         <tbody>
-          {timetableData.TrainTimetables.map((train) => {
-            const originStop = train.StopTimes.find(
-              (stop) => stop.StationID === selectedOriginStation.StationID
-            );
-            const destStop = train.StopTimes.find(
-              (stop) => stop.StationID === selectedDestStation.StationID
-            );
-            return { train, originStop, destStop };
-          })
-            .filter(({ originStop, destStop }) => originStop && destStop)
-            .sort((a, b) =>
-              a.originStop.DepartureTime.localeCompare(
-                b.originStop.DepartureTime
-              )
-            )
-            .map(({ train, originStop, destStop }) => (
+          {filteredList.map(({ train, originStop, destStop }) => {
+            // 比對車號
+            let delay = {};
+            if (delayData && Array.isArray(delayData) && delayData.length > 0) {
+              delay = delayData.find(
+                (d) => d.TrainNo === train.TrainInfo.TrainNo
+              );
+            }
+            if (delay) {
+              console.log("誤點資料：", delay);
+            }
+            return (
               <React.Fragment key={train.TrainInfo.TrainNo}>
                 <tr className="hover:bg-gray-50">
                   <td
@@ -81,15 +93,52 @@ export default function TimetableDetail({
                         if (diffMin < 0) diffMin += 24 * 60;
                         const hours = Math.floor(diffMin / 60);
                         const mins = diffMin % 60;
-                        return `行駛時間：${hours}時${mins}分`;
+                        return hours === 0
+                          ? `${mins}分`
+                          : `${hours}時${mins}分`;
                       })()}
                     </div>
+                  </td>
+                  {/* 即時資訊欄位 */}
+                  <td className="border px-4 py-2 text-center" rowSpan={2}>
+                    {(() => {
+                      const depTimeStr = originStop.DepartureTime;
+                      if (!depTimeStr) return "-";
+                      const now = new Date();
+                      const yyyy = now.getFullYear();
+                      const mm = String(now.getMonth() + 1).padStart(2, "0");
+                      const dd = String(now.getDate()).padStart(2, "0");
+                      const todayStr = `${yyyy}-${mm}-${dd}`;
+                      // 若查詢日期不是今天，直接顯示準點
+                      if (selectedDate && selectedDate !== todayStr) {
+                        return "準點";
+                      }
+                      // 出發時間加上誤點分鐘
+                      const depDateTime = new Date(
+                        `${todayStr}T${depTimeStr}:00`
+                      );
+                      const delayMin =
+                        delay && delay.DelayTime ? delay.DelayTime : 0;
+                      const depWithDelay = new Date(
+                        depDateTime.getTime() + delayMin * 60000
+                      );
+                      if (depWithDelay < now) {
+                        return <span className="text-gray-400">已過站</span>;
+                      }
+                      if (delay && delay.DelayTime) {
+                        return (
+                          <span className="text-red-600">{`晚 ${delay.DelayTime} 分鐘`}</span>
+                        );
+                      }
+                      return "準點";
+                    })()}
                   </td>
                 </tr>
                 {/* 第二行僅為分隔視覺效果，可省略內容 */}
                 <tr className="hover:bg-gray-50"></tr>
               </React.Fragment>
-            ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
