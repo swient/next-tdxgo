@@ -99,10 +99,12 @@ export default function Home() {
       <footer className="w-full mt-12 py-8 border-t border-gray-200 dark:border-gray-700 flex flex-col items-center gap-4">
         <div className="flex gap-4">
           <a
-            href="mailto:contact@tdxgo.tw"
+            href="https://github.com/swient/next-tdxgo"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition"
           >
-            聯絡我們
+            GitHub
           </a>
           <a
             href="https://facebook.com"

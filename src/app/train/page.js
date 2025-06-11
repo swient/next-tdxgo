@@ -84,17 +84,15 @@ export default function TrainPage() {
                 </div>
               )}
 
-              {selectedOriginStation &&
-                selectedDestStation &&
-                timetableData?.TrainTimetables?.length > 0 && (
-                  <TimetableDetail
-                    timetableData={timetableData}
-                    selectedOriginStation={selectedOriginStation}
-                    selectedDestStation={selectedDestStation}
-                    selectedDate={selectedDate}
-                    liveBoard={liveBoard}
-                  />
-                )}
+              {selectedOriginStation && selectedDestStation && (
+                <TimetableDetail
+                  timetableData={timetableData}
+                  selectedOriginStation={selectedOriginStation}
+                  selectedDestStation={selectedDestStation}
+                  selectedDate={selectedDate}
+                  liveBoard={liveBoard}
+                />
+              )}
             </div>
           )}
       </div>

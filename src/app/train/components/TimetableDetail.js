@@ -61,6 +61,10 @@ export default function TimetableDetail({
     setNearestIdx(found);
   }, [filteredList, liveBoard]);
 
+  if (!filteredList.length || timetableData.TrainTimetables.length === 0) {
+    return <div className="mt-6 text-center text-gray-500">當前無任何班次</div>;
+  }
+
   return (
     <div className="mt-6 overflow-x-auto">
       <table className="min-w-full border-collapse">
