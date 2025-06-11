@@ -5,6 +5,8 @@
 export const BASE_URL = "https://tdx.transportdata.tw/api/basic/v2";
 // 自動更新間隔時間 (5分鐘)
 export const AUTO_UPDATE_INTERVAL = 5 * 60 * 1000;
+// 一頁15筆資料
+export const itemsPerPage = 15;
 
 /**
  * 城市清單設定

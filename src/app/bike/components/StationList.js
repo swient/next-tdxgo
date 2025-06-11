@@ -10,9 +10,9 @@
  * - 即時更新
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { utils } from "../utils";
-import { SERVICE_TYPE } from "../constants";
+import { itemsPerPage, SERVICE_TYPE } from "../constants";
 
 export default function StationList({
   stations,
@@ -31,6 +31,7 @@ export default function StationList({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [sortType, setSortType] = useState("name");
   const [filterType, setFilterType] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // 站點分類函數
   function getFilteredStations(stations, filterType) {
@@ -115,6 +116,16 @@ export default function StationList({
     sortType
   );
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, sortType, searchText]);
+
+  const totalPages = Math.ceil(displayStations.length / itemsPerPage);
+  const pagedStations = displayStations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   /**
    * 渲染站點列表和操作介面
    * 包含：
@@ -155,57 +166,55 @@ export default function StationList({
 
         {/* 排序和搜尋 */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3">
-            <select
-              value={sortType}
-              onChange={(e) => setSortType(e.target.value)}
-              className="px-2 py-1 border rounded text-sm bg-white"
-            >
-              {sortDefs.map((sort) => (
-                <option key={sort.key} value={sort.key}>
-                  {sort.label}
-                </option>
-              ))}
-            </select>
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onFocus={() => setIsDropdownOpen(true)}
-                placeholder="搜尋站點或點擊選擇"
-                className="px-2 py-1 border rounded text-sm pr-24 w-64"
-              />
-              <span className="absolute right-2 text-xs text-gray-500">
-                {displayStations.length} / {stations.length} 站
-              </span>
-              {isDropdownOpen && (
-                <div
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto z-10"
-                  onMouseLeave={() => setIsDropdownOpen(false)}
-                >
-                  {displayStations.map((station) => (
-                    <div
-                      key={station.StationID}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                      onClick={() => {
-                        setSearchText(station.StationName.Zh_tw);
-                        setIsDropdownOpen(false);
-                      }}
-                    >
-                      {station.StationName.Zh_tw}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <select
+            value={sortType}
+            onChange={(e) => setSortType(e.target.value)}
+            className="px-2 py-1 border rounded text-sm bg-white"
+          >
+            {sortDefs.map((sort) => (
+              <option key={sort.key} value={sort.key}>
+                {sort.label}
+              </option>
+            ))}
+          </select>
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onFocus={() => setIsDropdownOpen(true)}
+              placeholder="搜尋站點或點擊選擇"
+              className="px-2 py-1 border rounded text-sm pr-24 w-64"
+            />
+            <span className="absolute right-2 text-xs text-gray-500">
+              {displayStations.length} / {stations.length} 站
+            </span>
+            {isDropdownOpen && (
+              <div
+                className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto z-10"
+                onMouseLeave={() => setIsDropdownOpen(false)}
+              >
+                {displayStations.map((station) => (
+                  <div
+                    key={station.StationID}
+                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    onClick={() => {
+                      setSearchText(station.StationName.Zh_tw);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    {station.StationName.Zh_tw}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* 站點列表 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayStations.map((station) => (
+        {pagedStations.map((station) => (
           <div
             key={station.StationID}
             className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 border border-gray-200"
@@ -249,6 +258,46 @@ export default function StationList({
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex flex-wrap justify-center items-center gap-3 mt-6">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            上一頁
+          </button>
+
+          <span className="text-sm flex items-center gap-1">
+            第
+            <select
+              value={currentPage}
+              onChange={(e) => setCurrentPage(Number(e.target.value))}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <option key={page} value={page}>
+                    {page}
+                  </option>
+                )
+              )}
+            </select>
+            頁 / 共 {totalPages} 頁
+          </span>
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            下一頁
+          </button>
+        </div>
+      )}
 
       {displayStations.length === 0 && (
         <div className="text-center text-gray-500 py-8">

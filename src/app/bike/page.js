@@ -6,6 +6,11 @@ import { utils } from "./utils";
 import { AUTO_UPDATE_INTERVAL, CITIES } from "./constants";
 import CitySelector from "./components/CitySelector";
 import StationList from "./components/StationList";
+import dynamic from "next/dynamic";
+
+const MapView = dynamic(() => import("./components/MapView"), {
+  ssr: false,
+});
 
 export default function BikeStationPage() {
   const {
@@ -77,12 +82,15 @@ export default function BikeStationPage() {
               </div>
             )}
             {!loading && !errors.stations && !errors.availability && (
-              <StationList
-                stations={stations}
-                lastUpdateTime={utils.formatUpdateTime(lastUpdateTime)}
-                onRefresh={refreshBikeData}
-                loading={loading}
-              />
+              <div className="mb-6 z-0">
+                <MapView stations={stations} />
+                <StationList
+                  stations={stations}
+                  lastUpdateTime={utils.formatUpdateTime(lastUpdateTime)}
+                  onRefresh={refreshBikeData}
+                  loading={loading}
+                />
+              </div>
             )}
           </div>
         )}
