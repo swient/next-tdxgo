@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# next-tdxgo
 
-## Getting Started
+一個以 Next.js 與 React 打造的台灣交通查詢平台，整合自行車、公車、火車等多種運輸資訊，提供即時查詢與友善介面
 
-First, run the development server:
+## 功能特色
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 自行車站點查詢
+- 公車路線、站點與即時動態查詢
+- 火車時刻表與站點查詢
+- 支援多種交通工具切換
+- 現代化 UI，行動裝置友善
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 安裝與啟動
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+1. 安裝相依套件
+   ```bash
+   npm install
+   ```
+2. 設定 TDX API 金鑰  
+   前往 [TDX 平台](https://tdx.transportdata.tw/) 申請「CLIENT_ID」與「CLIENT_SECRET」。  
+   於專案根目錄建立 `.env.local` 檔案，內容如下：
+   ```
+   CLIENT_ID=你的_CLIENT_ID
+   CLIENT_SECRET=你的_CLIENT_SECRET
+   ```
+3. 啟動開發伺服器
+   ```bash
+   npm run dev
+   ```
+4. 打包正式版
+   ```bash
+   npm run build
+   npm start
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 目錄結構簡介
 
-## Learn More
+- `src/app/bike/`：自行車相關頁面、元件與 API
+- `src/app/bus/`：公車相關頁面、元件與 API
+- `src/app/train/`：火車相關頁面、元件與 API
+- `src/app/NavBar.js`：主導覽列元件
+- `src/app/layout.js`：全域佈局
+- `public/`：靜態資源與圖示
 
-To learn more about Next.js, take a look at the following resources:
+## 技術棧
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 15
+- React 19
+- Tailwind CSS 4

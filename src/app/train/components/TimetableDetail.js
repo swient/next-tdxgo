@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export default function TimetableDetail({
   timetableData,
@@ -17,10 +17,50 @@ export default function TimetableDetail({
     );
     return { train, originStop, destStop };
   })
-    .filter(({ originStop, destStop }) => originStop && destStop)
+    .filter(({ originStop, destStop }) => {
+      if (!originStop || !destStop) return false;
+      if (!destStop.ArrivalTime) return false;
+      const now = new Date();
+      const nowHour = now.getHours();
+      const [arrHour] = destStop.ArrivalTime.split(":").map(Number);
+      if (arrHour >= nowHour) return true;
+      return false;
+    })
     .sort((a, b) =>
       a.originStop.DepartureTime.localeCompare(b.originStop.DepartureTime)
     );
+  const [nearestIdx, setNearestIdx] = useState(null);
+
+  useEffect(() => {
+    const now = new Date();
+    let minDiff = Infinity;
+    let found = null;
+    for (let i = 0; i < filteredList.length; i++) {
+      const depTimeStr = filteredList[i].originStop.DepartureTime;
+      if (!depTimeStr) continue;
+      const depDateTime = new Date(now);
+      const [depHour, depMin] = depTimeStr.split(":").map(Number);
+      depDateTime.setHours(depHour, depMin, 0, 0);
+      let delayMin = 0;
+      let delayObj = null;
+      if (liveBoard && Array.isArray(liveBoard) && liveBoard.length > 0) {
+        delayObj = liveBoard.find(
+          (d) => d.TrainNo === filteredList[i].train.TrainInfo.TrainNo
+        );
+        if (delayObj && typeof delayObj.DelayTime === "number") {
+          delayMin = delayObj.DelayTime;
+        }
+      }
+      const depWithDelay = new Date(depDateTime.getTime() + delayMin * 60000);
+      const diff = depWithDelay - now;
+      if (diff > 0 && diff < minDiff) {
+        minDiff = diff;
+        found = i;
+      }
+    }
+    setNearestIdx(found);
+  }, [filteredList, liveBoard]);
+
   return (
     <div className="mt-6 overflow-x-auto">
       <table className="min-w-full border-collapse">
@@ -32,7 +72,7 @@ export default function TimetableDetail({
           </tr>
         </thead>
         <tbody>
-          {filteredList.map(({ train, originStop, destStop }) => {
+          {filteredList.map(({ train, originStop, destStop }, idx) => {
             // 比對車號
             let delay = {};
             if (liveBoard && Array.isArray(liveBoard) && liveBoard.length > 0) {
@@ -40,9 +80,11 @@ export default function TimetableDetail({
                 (d) => d.TrainNo === train.TrainInfo.TrainNo
               );
             }
+            const highlightRow =
+              idx === nearestIdx ? "bg-blue-100" : "hover:bg-gray-50";
             return (
               <React.Fragment key={train.TrainInfo.TrainNo}>
-                <tr className="hover:bg-gray-50">
+                <tr className={highlightRow}>
                   <td
                     className="border px-4 py-2 text-center font-bold"
                     rowSpan={2}
