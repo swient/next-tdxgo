@@ -84,7 +84,7 @@ export default function TrainPage() {
                 </div>
               )}
 
-              {selectedOriginStation && selectedDestStation && (
+              {selectedOriginStation && selectedDestStation && selectedDate && (
                 <TimetableDetail
                   timetableData={timetableData}
                   selectedOriginStation={selectedOriginStation}

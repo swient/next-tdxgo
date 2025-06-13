@@ -8,27 +8,29 @@ export default function TimetableDetail({
   liveBoard,
   selectedDate,
 }) {
-  const filteredList = timetableData.TrainTimetables.map((train) => {
-    const originStop = train.StopTimes.find(
-      (stop) => stop.StationID === selectedOriginStation.StationID
-    );
-    const destStop = train.StopTimes.find(
-      (stop) => stop.StationID === selectedDestStation.StationID
-    );
-    return { train, originStop, destStop };
-  })
-    .filter(({ originStop, destStop }) => {
-      if (!originStop || !destStop) return false;
-      if (!destStop.ArrivalTime) return false;
-      const now = new Date();
-      const nowHour = now.getHours();
-      const [arrHour] = destStop.ArrivalTime.split(":").map(Number);
-      if (arrHour >= nowHour) return true;
-      return false;
-    })
-    .sort((a, b) =>
-      a.originStop.DepartureTime.localeCompare(b.originStop.DepartureTime)
-    );
+  const filteredList = timetableData
+    ? timetableData.TrainTimetables.map((train) => {
+        const originStop = train.StopTimes.find(
+          (stop) => stop.StationID === selectedOriginStation.StationID
+        );
+        const destStop = train.StopTimes.find(
+          (stop) => stop.StationID === selectedDestStation.StationID
+        );
+        return { train, originStop, destStop };
+      })
+        .filter(({ originStop, destStop }) => {
+          if (!originStop || !destStop) return false;
+          if (!destStop.ArrivalTime) return false;
+          const now = new Date();
+          const nowHour = now.getHours();
+          const [arrHour] = destStop.ArrivalTime.split(":").map(Number);
+          if (arrHour >= nowHour) return true;
+          return false;
+        })
+        .sort((a, b) =>
+          a.originStop.DepartureTime.localeCompare(b.originStop.DepartureTime)
+        )
+    : [];
   const [nearestIdx, setNearestIdx] = useState(null);
 
   useEffect(() => {
