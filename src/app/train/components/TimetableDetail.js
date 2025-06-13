@@ -18,13 +18,33 @@ export default function TimetableDetail({
         );
         return { train, originStop, destStop };
       })
-        .filter(({ originStop, destStop }) => {
+        .filter(({ train, originStop, destStop }) => {
           if (!originStop || !destStop) return false;
-          if (!destStop.ArrivalTime) return false;
+          if (!originStop.DepartureTime) return false;
+          // 若選擇日期不是今天，直接顯示所有班次
           const now = new Date();
-          const nowHour = now.getHours();
-          const [arrHour] = destStop.ArrivalTime.split(":").map(Number);
-          if (arrHour >= nowHour) return true;
+          const todayStr = now.toISOString().slice(0, 10);
+          if (selectedDate && selectedDate !== todayStr) return true;
+          // 取得延遲分鐘
+          let delayMin = 0;
+          if (liveBoard && Array.isArray(liveBoard) && liveBoard.length > 0) {
+            const delayObj = liveBoard.find(
+              (d) => d.TrainNo === train.TrainInfo.TrainNo
+            );
+            if (delayObj && typeof delayObj.DelayTime === "number") {
+              delayMin = delayObj.DelayTime;
+            }
+          }
+          // 計算實際出發時間
+          const [depHour, depMin] =
+            originStop.DepartureTime.split(":").map(Number);
+          const depDateTime = new Date(now);
+          depDateTime.setHours(depHour, depMin, 0, 0);
+          const depWithDelay = new Date(
+            depDateTime.getTime() + delayMin * 60000
+          );
+          // 過站僅顯示一小時內的班次
+          if (depWithDelay - now >= -60 * 60000) return true;
           return false;
         })
         .sort((a, b) =>
@@ -35,6 +55,11 @@ export default function TimetableDetail({
 
   useEffect(() => {
     const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    if (selectedDate && selectedDate !== todayStr) {
+      setNearestIdx(null);
+      return;
+    }
     let minDiff = Infinity;
     let found = null;
     for (let i = 0; i < filteredList.length; i++) {
@@ -154,9 +179,13 @@ export default function TimetableDetail({
                       const mm = String(now.getMonth() + 1).padStart(2, "0");
                       const dd = String(now.getDate()).padStart(2, "0");
                       const todayStr = `${yyyy}-${mm}-${dd}`;
-                      // 若查詢日期不是今天，直接顯示準點
+                      // 若查詢日期不是今天，依日期顯示狀態
                       if (selectedDate && selectedDate !== todayStr) {
-                        return "準點";
+                        if (selectedDate < todayStr) {
+                          return <span className="text-gray-400">已過站</span>;
+                        } else {
+                          return "準點";
+                        }
                       }
                       // 出發時間加上誤點分鐘
                       const depDateTime = new Date(
