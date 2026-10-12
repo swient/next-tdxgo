@@ -1,10 +1,11 @@
 "use client";
-import React from "react";
 import { useBusApi } from "./hooks/useBusApi";
+import { useFavorites } from "./hooks/useFavorites";
 
 import CitySelector from "./components/CitySelector";
 import RouteDetail from "./components/RouteDetail";
 import RouteList from "./components/RouteList";
+import FavoriteRouteList from "./components/FavoriteRouteList";
 
 export default function BusPage() {
   const {
@@ -18,10 +19,15 @@ export default function BusPage() {
     realTimeBuses,
     direction,
     setDirection,
+    showFavorite,
+    setShowFavorite,
     loading,
     errors,
     refreshLiveBusStatus,
   } = useBusApi();
+
+  const { favorites, isFavorite, toggleFavorite, removeFavorite } =
+    useFavorites();
 
   const hasError =
     errors.routes || errors.stops || errors.eta || errors.realTimeBuses;
@@ -33,17 +39,74 @@ export default function BusPage() {
           <img src="/icons/bus.svg" alt="bus" className="w-8 h-8" />
           全台公車即時資訊
         </h1>
-        {!city ? (
-          <CitySelector onSelect={setCity} />
+        {!city && !showFavorite ? (
+          <div>
+            <div className="mb-4">
+              <CitySelector onSelect={setCity} />
+            </div>
+            <button
+              className="w-full py-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 rounded"
+              onClick={() => setShowFavorite(true)}
+            >
+              我的收藏
+            </button>
+          </div>
         ) : !selectedRoute ? (
           <div>
             <button
               className="mb-4 text-blue-600 hover:underline"
-              onClick={() => setCity(null)}
+              onClick={() => {
+                setCity(null);
+                setShowFavorite(false);
+              }}
             >
               ← 返回縣市選擇
             </button>
-            <h2 className="text-lg font-bold mb-2">{city.name}公車</h2>
+            {showFavorite ? (
+              <FavoriteRouteList
+                setSelectedRoute={setSelectedRoute}
+                setDirection={setDirection}
+                favorites={favorites}
+                removeFavorite={removeFavorite}
+              />
+            ) : (
+              <>
+                <h2 className="text-lg font-bold mb-2">
+                  {city?.name || ""}公車
+                </h2>
+                {loading && (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="text-gray-500">載入資料中，請稍候...</div>
+                  </div>
+                )}
+                {!loading && hasError && (
+                  <div className="text-red-600 font-semibold">
+                    {errors.routes ||
+                      errors.stops ||
+                      errors.eta ||
+                      errors.realTimeBuses}
+                  </div>
+                )}
+                {!loading && !hasError && (
+                  <RouteList
+                    routes={routes}
+                    setSelectedRoute={setSelectedRoute}
+                    setDirection={setDirection}
+                    isFavorite={isFavorite}
+                    toggleFavorite={toggleFavorite}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            <button
+              className="mb-4 text-blue-600 hover:underline"
+              onClick={() => setSelectedRoute(null)}
+            >
+              ← 返回路線清單
+            </button>
             {loading && (
               <div className="flex justify-center items-center h-64">
                 <div className="text-gray-500">載入資料中，請稍候...</div>
@@ -58,25 +121,17 @@ export default function BusPage() {
               </div>
             )}
             {!loading && !hasError && (
-              <RouteList
-                routes={routes}
-                setSelectedRoute={setSelectedRoute}
+              <RouteDetail
+                selectedRoute={selectedRoute}
+                stops={stops}
+                eta={eta}
+                realTimeBuses={realTimeBuses}
+                direction={direction}
                 setDirection={setDirection}
+                refreshLiveBusStatus={refreshLiveBusStatus}
               />
             )}
-          </div>
-        ) : (
-          <RouteDetail
-            routes={routes}
-            selectedRoute={selectedRoute}
-            setSelectedRoute={setSelectedRoute}
-            stops={stops}
-            eta={eta}
-            realTimeBuses={realTimeBuses}
-            direction={direction}
-            setDirection={setDirection}
-            refreshLiveBusStatus={refreshLiveBusStatus}
-          />
+          </>
         )}
       </div>
     </div>

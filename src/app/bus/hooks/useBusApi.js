@@ -3,6 +3,20 @@ const BASE_URL = "https://tdx.transportdata.tw/api/basic/v2";
 
 import { fetchWithError } from "../../utils/fetchUtils";
 
+// 依 RouteUID 過濾站序並保留去/回兩方向，若同一 RouteUID 存在多個子路線名稱，再依名稱精準過濾
+function filterStopsByRoute(allStops, route) {
+  const byRoute = (allStops || []).filter((s) => s.RouteUID === route.RouteUID);
+  const names = new Set(
+    byRoute.map((s) => s.SubRouteName?.Zh_tw || s.RouteName?.Zh_tw || "")
+  );
+  if (names.size <= 1) return byRoute;
+  const name = route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw || "";
+  const byName = byRoute.filter(
+    (s) => (s.SubRouteName?.Zh_tw || s.RouteName?.Zh_tw || "") === name
+  );
+  return byName.length > 0 ? byName : byRoute;
+}
+
 // 封裝所有 bus API 狀態與邏輯
 export function useBusApi() {
   const [city, setCity] = useState(null);
@@ -12,6 +26,7 @@ export function useBusApi() {
   const [eta, setEta] = useState([]);
   const [realTimeBuses, setRealTimeBuses] = useState([]);
   const [direction, setDirection] = useState(0);
+  const [showFavorite, setShowFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
     routes: "",
@@ -25,21 +40,6 @@ export function useBusApi() {
   const stopsCache = useRef({});
   const etaCache = useRef({});
   const realTimeBusesCache = useRef({});
-
-  // 切換 tab 時自動切換 selectedRoute 為對應方向
-  useEffect(() => {
-    if (!selectedRoute || !routes.length) return;
-    if (selectedRoute.Direction === direction) return;
-    const match = routes.find(
-      (r) =>
-        r.RouteUID === selectedRoute.RouteUID &&
-        r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
-        JSON.stringify(r.Operators) ===
-          JSON.stringify(selectedRoute.Operators) &&
-        r.Direction === direction
-    );
-    if (match) setSelectedRoute(match);
-  }, [direction]);
 
   // 取得路線
   useEffect(() => {
@@ -149,14 +149,75 @@ export function useBusApi() {
       });
   }, [city]);
 
-  // 取得站序
+  // 取得站序、ETA、即時車輛
   useEffect(() => {
     if (!selectedRoute) return;
+    // 我的收藏模式且有選擇路線時直接請求
+    if (showFavorite && selectedRoute.City && selectedRoute.RouteName?.Zh_tw) {
+      const routeUID = selectedRoute.RouteUID;
+      const routeName = encodeURIComponent(selectedRoute.RouteName.Zh_tw);
+      setLoading(true);
+      setErrors((prev) => ({
+        ...prev,
+        stops: "",
+        eta: "",
+        realTimeBuses: "",
+      }));
+      Promise.all([
+        fetchWithError(
+          `${BASE_URL}/Bus/StopOfRoute/City/${selectedRoute.City}/${routeName}?$format=JSON`
+        ),
+        fetchWithError(
+          `${BASE_URL}/Bus/EstimatedTimeOfArrival/City/${selectedRoute.City}?$filter=RouteUID eq '${routeUID}'&$format=JSON`
+        ),
+        fetchWithError(
+          `${BASE_URL}/Bus/RealTimeNearStop/City/${selectedRoute.City}?$filter=RouteUID eq '${routeUID}'&$format=JSON`
+        ),
+      ])
+        .then(([stopsRes, etaRes, realTimeRes]) => {
+          if (stopsRes.error) {
+            setStops([]);
+            setErrors((prev) => ({ ...prev, stops: stopsRes.error }));
+          } else {
+            setStops(filterStopsByRoute(stopsRes.data, selectedRoute));
+            setErrors((prev) => ({ ...prev, stops: "" }));
+          }
+          if (etaRes.error) {
+            setEta([]);
+            setErrors((prev) => ({ ...prev, eta: etaRes.error }));
+          } else {
+            setEta(
+              (etaRes.data || []).filter((e) => e.RouteUID === routeUID)
+            );
+            setErrors((prev) => ({ ...prev, eta: "" }));
+          }
+          if (realTimeRes.error) {
+            setRealTimeBuses([]);
+            setErrors((prev) => ({
+              ...prev,
+              realTimeBuses: realTimeRes.error,
+            }));
+          } else {
+            setRealTimeBuses(
+              (realTimeRes.data || []).filter(
+                (bus) => bus.RouteUID === routeUID
+              )
+            );
+            setErrors((prev) => ({ ...prev, realTimeBuses: "" }));
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+      return;
+    }
+    // 其餘情境使用原本快取
+    if (!city) return;
+    // 取得站序
     if (stopsCache.current[city.key]) {
-      const filtered = stopsCache.current[city.key].filter(
-        (s) =>
-          s.RouteUID === selectedRoute.RouteUID &&
-          s.SubRouteUID === selectedRoute.SubRouteUID
+      const filtered = filterStopsByRoute(
+        stopsCache.current[city.key],
+        selectedRoute
       );
       setStops(filtered);
       setErrors((prev) => ({ ...prev, stops: "" }));
@@ -164,11 +225,7 @@ export function useBusApi() {
       setStops([]);
       setErrors((prev) => ({ ...prev, stops: "" }));
     }
-  }, [selectedRoute, city]);
-
-  // 取得ETA
-  useEffect(() => {
-    if (!selectedRoute) return;
+    // 取得ETA
     if (etaCache.current[city.key]) {
       const filtered = etaCache.current[city.key].filter(
         (e) => e.RouteUID === selectedRoute.RouteUID
@@ -179,11 +236,7 @@ export function useBusApi() {
       setEta([]);
       setErrors((prev) => ({ ...prev, eta: "" }));
     }
-  }, [selectedRoute, city]);
-
-  // 取得即時車輛
-  useEffect(() => {
-    if (!selectedRoute || !city) return;
+    // 取得即時車輛
     if (realTimeBusesCache.current[city.key]) {
       const filtered = realTimeBusesCache.current[city.key].filter(
         (bus) => bus.RouteUID === selectedRoute.RouteUID
@@ -194,30 +247,40 @@ export function useBusApi() {
       setRealTimeBuses([]);
       setErrors((prev) => ({ ...prev, realTimeBuses: "" }));
     }
-  }, [selectedRoute, city]);
+  }, [selectedRoute, city, showFavorite]);
 
   // 更新 ETA 與即時車輛
   async function refreshLiveBusStatus() {
-    if (!city) return;
+    const targetCity = city
+      ? city.key
+      : showFavorite && selectedRoute
+      ? selectedRoute.City
+      : null;
+    if (!targetCity) return;
+
+    const isFavoriteMode = !city && showFavorite && selectedRoute;
+    const query = isFavoriteMode
+      ? `?$filter=RouteUID eq '${selectedRoute.RouteUID}'&$format=JSON`
+      : `?$format=JSON`;
     const [etaRes, realTimeRes] = await Promise.all([
       fetchWithError(
-        `${BASE_URL}/Bus/EstimatedTimeOfArrival/City/${city.key}?$format=JSON`
+        `${BASE_URL}/Bus/EstimatedTimeOfArrival/City/${targetCity}${query}`
       ),
       fetchWithError(
-        `${BASE_URL}/Bus/RealTimeNearStop/City/${city.key}?$format=JSON`
+        `${BASE_URL}/Bus/RealTimeNearStop/City/${targetCity}${query}`
       ),
     ]);
     if (etaRes.error) {
       return { error: "取得 ETA 失敗" };
     } else {
-      etaCache.current[city.key] = etaRes.data;
+      if (city) etaCache.current[city.key] = etaRes.data;
       setEta(etaRes.data);
       setErrors((prev) => ({ ...prev, eta: "" }));
     }
     if (realTimeRes.error) {
       return { error: "取得即時車輛失敗" };
     } else {
-      realTimeBusesCache.current[city.key] = realTimeRes.data;
+      if (city) realTimeBusesCache.current[city.key] = realTimeRes.data;
       setRealTimeBuses(realTimeRes.data);
       setErrors((prev) => ({ ...prev, realTimeBuses: "" }));
     }
@@ -234,6 +297,8 @@ export function useBusApi() {
     realTimeBuses,
     direction,
     setDirection,
+    showFavorite,
+    setShowFavorite,
     loading,
     errors,
     refreshLiveBusStatus,

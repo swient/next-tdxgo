@@ -36,10 +36,28 @@ function RefreshCountdown({ onRefresh }) {
   );
 }
 
+// 依站序資料推算某方向的起訖站名
+function getTermini(stops, direction) {
+  const seqs = [];
+  (stops || []).forEach((s) => {
+    if (s.Direction !== direction) return;
+    (s.Stops || []).forEach((st) => {
+      seqs.push({
+        name: st.StopName?.Zh_tw || "",
+        seq: st.StopSequence ?? 0,
+      });
+    });
+  });
+  if (seqs.length === 0) return null;
+  const sorted = seqs.slice().sort((a, b) => a.seq - b.seq);
+  return {
+    departure: sorted[0].name,
+    destination: sorted[sorted.length - 1].name,
+  };
+}
+
 export default function RouteDetail({
-  routes,
   selectedRoute,
-  setSelectedRoute,
   stops,
   eta,
   realTimeBuses,
@@ -49,28 +67,26 @@ export default function RouteDetail({
 }) {
   if (!selectedRoute) return null;
 
+  // 可用方向直接從已載入的站序資料推得
+  const availableDirections = Array.from(
+    new Set((stops || []).map((s) => s.Direction))
+  );
+  const termini = getTermini(stops, direction);
+  const departName =
+    termini?.departure || selectedRoute.DepartureStopNameZh || "去程";
+  const destName =
+    termini?.destination || selectedRoute.DestinationStopNameZh || "回程";
+
   return (
     <div>
-      <button
-        className="mb-4 text-blue-600 hover:underline"
-        onClick={() => setSelectedRoute(null)}
-      >
-        ← 返回路線清單
-      </button>
       <h2 className="text-lg font-bold mb-2">
         {selectedRoute.SubRouteName?.Zh_tw || selectedRoute.RouteName?.Zh_tw}（
-        {selectedRoute.DepartureStopNameZh} →{" "}
-        {selectedRoute.DestinationStopNameZh}）
+        {departName} → {destName}）
       </h2>
       {/* Tab 切換 */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
-          {routes.some(
-            (r) =>
-              r.RouteUID === selectedRoute.RouteUID &&
-              r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
-              r.Direction === 0
-          ) && (
+          {availableDirections.includes(0) && (
             <button
               className={`px-4 py-2 rounded-t ${
                 direction === 0
@@ -80,24 +96,12 @@ export default function RouteDetail({
               onClick={() => setDirection(0)}
             >
               往
-              {(() => {
-                const match = routes.find(
-                  (r) =>
-                    r.RouteUID === selectedRoute.RouteUID &&
-                    r.SubRouteName?.Zh_tw ===
-                      selectedRoute.SubRouteName?.Zh_tw &&
-                    r.Direction === 0
-                );
-                return match?.DestinationStopNameZh || "去程";
-              })()}
+              {getTermini(stops, 0)?.destination ||
+                selectedRoute.DestinationStopNameZh ||
+                "去程"}
             </button>
           )}
-          {routes.some(
-            (r) =>
-              r.RouteUID === selectedRoute.RouteUID &&
-              r.SubRouteName?.Zh_tw === selectedRoute.SubRouteName?.Zh_tw &&
-              r.Direction === 1
-          ) && (
+          {availableDirections.includes(1) && (
             <button
               className={`px-4 py-2 rounded-t ${
                 direction === 1
@@ -107,16 +111,9 @@ export default function RouteDetail({
               onClick={() => setDirection(1)}
             >
               往
-              {(() => {
-                const match = routes.find(
-                  (r) =>
-                    r.RouteUID === selectedRoute.RouteUID &&
-                    r.SubRouteName?.Zh_tw ===
-                      selectedRoute.SubRouteName?.Zh_tw &&
-                    r.Direction === 1
-                );
-                return match?.DestinationStopNameZh || "回程";
-              })()}
+              {getTermini(stops, 1)?.destination ||
+                selectedRoute.DepartureStopNameZh ||
+                "回程"}
             </button>
           )}
         </div>

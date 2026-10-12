@@ -1,4 +1,5 @@
 // Next.js API Route：取得 TDX token
+export const runtime = 'edge';
 export async function POST() {
   const CLIENT_ID = process.env.CLIENT_ID;
   const CLIENT_SECRET = process.env.CLIENT_SECRET;

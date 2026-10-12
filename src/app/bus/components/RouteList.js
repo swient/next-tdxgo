@@ -1,6 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-export default function RouteList({ routes, setSelectedRoute, setDirection }) {
+export default function RouteList({
+  routes,
+  setSelectedRoute,
+  setDirection,
+  isFavorite,
+  toggleFavorite,
+}) {
   const [groupType, setGroupType] = useState("all");
   const [searchText, setSearchText] = useState("");
 
@@ -111,7 +117,7 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
             return nameA.localeCompare(nameB, "zh-Hant");
           })
           .map((route) => (
-            <button
+            <div
               key={
                 route.SubRouteUID +
                 "-" +
@@ -119,22 +125,42 @@ export default function RouteList({ routes, setSelectedRoute, setDirection }) {
                 "-" +
                 route.Direction
               }
-              className="bg-gray-100 hover:bg-blue-200 text-gray-800 py-2 px-3 rounded flex flex-col items-start border border-gray-200"
-              onClick={() => {
-                setSelectedRoute(route);
-                setDirection(route.Direction);
-              }}
+              className="bg-gray-100 hover:bg-blue-200 text-gray-800 py-2 px-3 rounded flex flex-row items-center border border-gray-200"
             >
-              <span className="font-bold text-blue-700 text-lg">
-                {route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw}
-              </span>
-              <span className="text-sm text-gray-500">
-                {route.DepartureStopNameZh} – {route.DestinationStopNameZh}
-              </span>
-              <span className="text-xs text-gray-400">
-                {route.Operators?.map((op) => op.OperatorName.Zh_tw).join(", ")}
-              </span>
-            </button>
+              <button
+                className="flex-1 text-left flex flex-col items-start outline-none"
+                onClick={() => {
+                  setSelectedRoute(route);
+                  setDirection(route.Direction);
+                }}
+                style={{ background: "none", border: "none", padding: 0 }}
+                tabIndex={-1}
+              >
+                <span className="font-bold text-blue-700 text-lg">
+                  {route.SubRouteName?.Zh_tw || route.RouteName?.Zh_tw}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {route.DepartureStopNameZh} – {route.DestinationStopNameZh}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {route.Operators?.map((op) => op.OperatorName.Zh_tw).join(
+                    ", "
+                  )}
+                </span>
+              </button>
+              <button
+                className="ml-2 text-yellow-400 hover:text-yellow-500 text-xl"
+                title={isFavorite(route) ? "移除收藏" : "加入收藏"}
+                onClick={() => toggleFavorite(route)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {isFavorite(route) ? "★" : "☆"}
+              </button>
+            </div>
           ))}
       </div>
     </>

@@ -13,21 +13,28 @@
 ## 安裝與啟動
 
 1. 安裝相依套件
+
    ```bash
    npm install
    ```
+
 2. 設定 TDX API 金鑰  
    前往 [TDX 平台](https://tdx.transportdata.tw/) 申請「CLIENT_ID」與「CLIENT_SECRET」。  
    於專案根目錄建立 `.env.local` 檔案，內容如下：
+
    ```
    CLIENT_ID=你的_CLIENT_ID
    CLIENT_SECRET=你的_CLIENT_SECRET
    ```
+
 3. 啟動開發伺服器
+
    ```bash
    npm run dev
    ```
+
 4. 打包正式版
+
    ```bash
    npm run build
    npm start
